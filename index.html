@@ -623,7 +623,7 @@
 ═══════════════════════════════════════════════ -->
 <div id="view-source" class="view" hidden>
   <div class="app-header">
-    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+    <button class="btn-icon" onclick="history.back()" aria-label="Volver">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <span class="header-title">Nuevo salto</span>
@@ -829,6 +829,9 @@ let mediaRecorder  = null;
 let recChunks      = [];
 let recTimerInt    = null;
 let recElapsed     = 0;
+let currentView   = 'home';
+let navDepth      = 0;
+let _popstateLock = false;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
@@ -838,11 +841,45 @@ function showView(name) {
     el.hidden = !show;
     if (show) el.style.display = 'flex'; else el.style.display = '';
   });
+  currentView = name;
 }
+
+function navigateTo(name) {
+  navDepth++;
+  history.pushState({ view: name, depth: navDepth }, '');
+  showView(name);
+}
+
+// ─── Back gesture / system back button ────────────────────────
+window.addEventListener('popstate', e => {
+  if (_popstateLock) { _popstateLock = false; return; }
+  const leavingView = currentView;
+  navDepth = e.state?.depth ?? 0;
+  const targetView = e.state?.view ?? 'home';
+
+  if (leavingView === 'camera') {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.onstop = null;
+      mediaRecorder.stop();
+    }
+    teardownCamera();
+  }
+  if (leavingView === 'analyzer') {
+    video.pause();
+    video.removeEventListener('timeupdate', onTimeUpdate);
+    video.removeEventListener('play',       syncPlayBtn);
+    video.removeEventListener('pause',      syncPlayBtn);
+    video.removeEventListener('ended',      syncPlayBtn);
+    video.src = '';
+    if (videoSrc) { URL.revokeObjectURL(videoSrc); videoSrc = null; }
+  }
+
+  showView(targetView);
+});
 
 function selectJumpType(type) {
   selectedType = type;
-  showView('source');
+  navigateTo('source');
 }
 
 // ─── Hub communication ─────────────────────────────────────────
@@ -880,7 +917,7 @@ async function openCamera() {
     const preview = document.getElementById('cam-preview');
     preview.srcObject = cameraStream;
     preview.play().catch(() => {});
-    showView('camera');
+    navigateTo('camera');
   } catch (err) {
     alert('No se pudo acceder a la cámara: ' + (err.message || err));
   }
@@ -893,6 +930,8 @@ function cancelCamera() {
   }
   teardownCamera();
   showView('source');
+  _popstateLock = true;
+  history.back();
 }
 
 function teardownCamera() {
@@ -960,6 +999,9 @@ function openAnalyzer(src) {
   syncMarkUI();
   syncResultPanel();
 
+  // Replace the current history entry (source or camera) so that
+  // swipe-back from the analyzer skips back to the view before source.
+  history.replaceState({ view: 'analyzer', depth: navDepth }, '');
   showView('analyzer');
 
   video.addEventListener('loadedmetadata', onMeta,       { once: true });
@@ -979,6 +1021,11 @@ function closeAnalyzer() {
   video.src = '';
   if (videoSrc) { URL.revokeObjectURL(videoSrc); videoSrc = null; }
   showView('home');
+  if (navDepth > 0) {
+    _popstateLock = true;
+    history.go(-navDepth);
+  }
+  navDepth = 0;
 }
 
 function onMeta() {
@@ -1221,8 +1268,8 @@ function saveJump() {
     fps,
   });
   broadcastJumps();
-  closeAnalyzer();
   renderJumpList();
+  closeAnalyzer();
 }
 
 // ─── Jump list ─────────────────────────────────────────────────
