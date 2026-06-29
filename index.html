@@ -1202,32 +1202,49 @@ function setCurrentTimeDisplay(t) {
 function fmtSec(s) { return (isFinite(s) ? s : 0).toFixed(3); }
 
 // ─── Line drag ────────────────────────────────────────────────
-let _drag = null;
+let _drag = null; // { which, startY, moved }
 
 function initLineDrags() {
   ['takeoff', 'landing'].forEach(which => {
     const el = document.getElementById('vline-' + which);
     el.addEventListener('mousedown', e => {
       e.preventDefault();
-      _drag = which;
+      _drag = { which, startY: e.clientY, moved: false };
     });
     el.addEventListener('touchstart', e => {
       e.preventDefault();
-      _drag = which;
+      _drag = { which, startY: e.touches[0].clientY, moved: false };
     }, { passive: false });
   });
 
   document.addEventListener('mousemove', e => {
     if (!_drag) return;
-    applyDrag(_drag, e.clientY);
+    if (Math.abs(e.clientY - _drag.startY) > 4) _drag.moved = true;
+    if (_drag.moved) applyDrag(_drag.which, e.clientY);
   });
-  document.addEventListener('mouseup', () => { _drag = null; });
+  document.addEventListener('mouseup', e => {
+    if (!_drag) return;
+    if (!_drag.moved) seekToMark(_drag.which);
+    _drag = null;
+  });
   document.addEventListener('touchmove', e => {
     if (!_drag) return;
-    e.preventDefault();
-    applyDrag(_drag, e.touches[0].clientY);
+    if (Math.abs(e.touches[0].clientY - _drag.startY) > 4) _drag.moved = true;
+    if (_drag.moved) { e.preventDefault(); applyDrag(_drag.which, e.touches[0].clientY); }
   }, { passive: false });
-  document.addEventListener('touchend', () => { _drag = null; });
+  document.addEventListener('touchend', () => {
+    if (!_drag) return;
+    if (!_drag.moved) seekToMark(_drag.which);
+    _drag = null;
+  });
+}
+
+function seekToMark(which) {
+  const t = marks[which];
+  if (t === null) return;
+  video.currentTime = t;
+  setCurrentTimeDisplay(t);
+  document.getElementById('scrubber').value = t;
 }
 
 function applyDrag(which, clientY) {
