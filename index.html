@@ -148,6 +148,50 @@
     .btn-primary:active { opacity: 0.7; }
     .btn-primary:disabled { opacity: 0.28; cursor: not-allowed; }
 
+    /* ── Jump type grid ─────────────────────────────────── */
+    #view-types > .scroll-body {
+      flex: 1; overflow-y: auto;
+      padding: 20px 16px calc(var(--safe-b) + 20px);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .type-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 18px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer; text-align: left;
+      transition: border-color 0.15s, transform 0.1s;
+      animation: fadeUp 0.25s ease both;
+      position: relative; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .type-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: 0.6;
+    }
+    .type-card:hover { border-color: var(--border2); }
+    .type-card:active { transform: scale(0.97); }
+
+    .type-card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem; font-weight: 500;
+      color: var(--text1);
+    }
+    .type-card-desc {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem; color: var(--text3); line-height: 1.4;
+    }
+
     /* ── Source selector ─────────────────────────────────── */
     #view-source > .scroll-body {
       flex: 1; overflow-y: auto;
@@ -490,7 +534,7 @@
     <span class="header-title">Saltos</span>
   </div>
   <div class="scroll-body">
-    <button class="btn-new-jump" onclick="showView('source')">
+    <button class="btn-new-jump" onclick="showView('types')">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo salto
     </button>
@@ -522,11 +566,47 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
+     JUMP TYPE SELECTOR
+═══════════════════════════════════════════════ -->
+<div id="view-types" class="view" hidden>
+  <div class="app-header">
+    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="header-title">Tipo de salto</span>
+  </div>
+  <div class="scroll-body">
+    <div class="type-grid">
+      <button class="type-card" onclick="selectJumpType('CMJ')" style="animation-delay:0s">
+        <div class="type-card-title">CMJ</div>
+        <div class="type-card-desc">Salto con contramovimiento</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('SJ')" style="animation-delay:0.04s">
+        <div class="type-card-title">SJ</div>
+        <div class="type-card-desc">Squat Jump estático</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('DJ')" style="animation-delay:0.08s">
+        <div class="type-card-title">DJ</div>
+        <div class="type-card-desc">Drop Jump desde caída</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-D')" style="animation-delay:0.12s">
+        <div class="type-card-title">Mono-D</div>
+        <div class="type-card-desc">Monopodal pierna derecha</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-I')" style="animation-delay:0.16s">
+        <div class="type-card-title">Mono-I</div>
+        <div class="type-card-desc">Monopodal pierna izquierda</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      SOURCE SELECTOR
 ═══════════════════════════════════════════════ -->
 <div id="view-source" class="view" hidden>
   <div class="app-header">
-    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+    <button class="btn-icon" onclick="showView('types')" aria-label="Volver">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <span class="header-title">Nuevo salto</span>
@@ -717,12 +797,13 @@
 <script>
 // ─── State ────────────────────────────────────────────────────
 const G = 9.81;
-let jumps       = [];
-let fps         = 60;
-let fpsDetected = false;
-let marks       = { takeoff: null, landing: null };
-let linePos     = { takeoff: null, landing: null };
-let videoSrc    = null;
+let jumps        = [];
+let fps          = 60;
+let fpsDetected  = false;
+let marks        = { takeoff: null, landing: null };
+let linePos      = { takeoff: null, landing: null };
+let videoSrc     = null;
+let selectedType = 'CMJ';
 let stepTimer   = null;
 let isScrubbing = false;
 let cameraStream   = null;
@@ -733,12 +814,17 @@ let recElapsed     = 0;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
-  ['home','source','camera','analyzer'].forEach(v => {
+  ['home','types','source','camera','analyzer'].forEach(v => {
     const el = document.getElementById('view-' + v);
     const show = v === name;
     el.hidden = !show;
     if (show) el.style.display = 'flex'; else el.style.display = '';
   });
+}
+
+function selectJumpType(type) {
+  selectedType = type;
+  showView('source');
 }
 
 // ─── Hub communication ─────────────────────────────────────────
@@ -849,6 +935,8 @@ function openAnalyzer(src) {
 
   video.src = src;
   video.load();
+
+  document.getElementById('sel-type').value = selectedType;
 
   updateFPSChip();
   syncMarkUI();
