@@ -55,12 +55,16 @@
     }
 
     .logo { display: flex; align-items: baseline; gap: 4px; cursor: default; }
-    .logo-main { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--text1); letter-spacing: -0.5px; }
+    .logo-main { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--text1); letter-spacing: -0.5px; }
     .logo-q { background: linear-gradient(135deg,#4f9cf9,#38d9a9); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .logo-sub { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--accent); letter-spacing: -0.5px; }
+    .logo-sub { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--accent); letter-spacing: -0.5px; }
     .logo-sub-initial { display: none; }
+    @keyframes hub-back-hint { 0% { transform: translateX(0); } 35% { transform: translateX(-5px); } 65% { transform: translateX(1px); } 100% { transform: translateX(0); } }
     .in-hub .logo-main { cursor: pointer; transition: opacity 0.15s; }
+    .in-hub .logo-main::before { content: '‹'; display: inline-block; margin-right: 8px; opacity: 0.55; animation: hub-back-hint 0.7s ease-out 0.5s 1 both; }
     .in-hub .logo-main:hover { opacity: 0.75; }
+    @media (max-width: 768px) { .logo-main, .logo-sub { font-size: 1.2rem; } }
+    @media (max-width: 480px) { .logo-main, .logo-sub { font-size: 1.1rem; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
 
     .btn-icon {
