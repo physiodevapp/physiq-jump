@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>PhysiQ · Saltos</title>
+  <link rel="icon" href="/physiq/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/physiq/jump/manifest.json">
+  <meta name="theme-color" content="#1e2d3d">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    :root {
+      --accent:      #f43f5e;
+      --accent-dim:  rgba(244,63,94,0.13);
+      --green:       #38d9a9;
+      --green-dim:   rgba(56,217,169,0.11);
+      --blue:        #4f9cf9;
+      --border:      #232d45;
+      --border2:     #2d3a58;
+      --surface:     #111620;
+      --surface2:    #0a0d12;
+      --text1:       #e8edf2;
+      --text2:       #8aa4bc;
+      --text3:       #5a6e8a;
+      --safe-b:      env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: var(--surface2);
+      color: var(--text1);
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    /* ── Views ────────────────────────────────────────────── */
+    .view {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+    }
+
+    /* ── App header ──────────────────────────────────────── */
+    .app-header {
+      display: flex; align-items: center; gap: 10px;
+      height: 52px; flex-shrink: 0;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .btn-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text2);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,0.08); color: var(--text1); }
+    .btn-icon:active { background: rgba(255,255,255,0.13); }
+
+    .header-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.05rem; font-weight: 400;
+      color: var(--text1); flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── Home view ───────────────────────────────────────── */
+    #view-home > .scroll-body {
+      flex: 1; overflow-y: auto;
+      padding: 16px 16px calc(var(--safe-b) + 16px);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .btn-new-jump {
+      width: 100%; padding: 15px 16px;
+      border-radius: 12px; border: 1.5px dashed var(--border2);
+      background: transparent; color: var(--accent);
+      font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-new-jump:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .btn-new-jump:active { opacity: 0.75; }
+
+    .jumps-empty {
+      text-align: center; padding: 40px 0;
+      color: var(--text3); font-size: 0.88rem; line-height: 1.6;
+    }
+
+    .jump-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .jump-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      animation: fadeUp 0.2s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    .jump-num {
+      font-family: 'DM Mono', monospace; font-size: 0.7rem;
+      color: var(--text3); min-width: 18px;
+    }
+    .jump-info { flex: 1; min-width: 0; }
+    .jump-type { font-size: 0.87rem; font-weight: 500; color: var(--text1); }
+    .jump-meta { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
+    .jump-height-wrap { text-align: right; }
+    .jump-height { font-family: 'DM Mono', monospace; font-size: 1.05rem; font-weight: 500; color: var(--accent); }
+    .jump-height-unit { font-size: 0.68rem; color: var(--text3); }
+
+    .btn-del {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text3); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, color 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-del:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+    .summary-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px 16px;
+      display: flex; gap: 0;
+    }
+    .sum-item { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .sum-item + .sum-item { border-left: 1px solid var(--border); padding-left: 16px; }
+    .sum-label { font-family: 'DM Mono', monospace; font-size: 0.63rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+    .sum-value { font-family: 'DM Mono', monospace; font-size: 0.95rem; font-weight: 500; color: var(--text1); }
+
+    .btn-primary {
+      width: 100%; padding: 14px 16px;
+      border-radius: 12px; border: none;
+      background: var(--accent); color: #fff;
+      font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;
+      cursor: pointer; transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:hover { opacity: 0.87; }
+    .btn-primary:active { opacity: 0.7; }
+    .btn-primary:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    /* ── Source selector ─────────────────────────────────── */
+    #view-source > .scroll-body {
+      flex: 1; overflow-y: auto;
+      padding: 24px 16px calc(var(--safe-b) + 24px);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .source-card {
+      width: 100%; padding: 18px 16px;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text1);
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer; display: flex; align-items: center; gap: 14px;
+      transition: border-color 0.15s, background 0.15s; text-align: left;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .source-card:hover { border-color: var(--border2); background: #141b28; }
+    .source-card:active { opacity: 0.8; }
+
+    .source-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--accent-dim); color: var(--accent);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .source-name { font-size: 0.95rem; font-weight: 500; }
+    .source-desc { font-size: 0.78rem; color: var(--text3); margin-top: 3px; }
+
+    /* ── Camera view ─────────────────────────────────────── */
+    #view-camera > .cam-body {
+      flex: 1; position: relative; background: #000; overflow: hidden;
+    }
+
+    #cam-preview {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+    }
+
+    .rec-badge {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.65); color: #fff;
+      font-family: 'DM Mono', monospace; font-size: 0.82rem;
+      padding: 5px 12px; border-radius: 20px;
+      display: flex; align-items: center; gap: 7px;
+      backdrop-filter: blur(4px);
+    }
+    .rec-badge-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent); animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.1} }
+
+    .cam-controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px 0 calc(var(--safe-b) + 28px);
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(transparent, rgba(0,0,0,0.55));
+    }
+
+    .btn-record {
+      width: 74px; height: 74px; border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.85);
+      background: var(--accent);
+      cursor: pointer; transition: transform 0.1s;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-record:active { transform: scale(0.91); }
+    .btn-record-inner {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #fff;
+      transition: border-radius 0.18s, width 0.18s, height 0.18s;
+    }
+    .btn-record.is-recording .btn-record-inner {
+      border-radius: 5px; width: 22px; height: 22px;
+    }
+
+    /* ── Analyzer view ───────────────────────────────────── */
+    .analyzer-header {
+      display: flex; align-items: center; gap: 10px;
+      height: 52px; flex-shrink: 0; padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .fps-chip {
+      margin-left: auto; flex-shrink: 0;
+      padding: 5px 11px; border-radius: 20px;
+      border: 1px solid var(--border2); background: transparent;
+      color: var(--text3); font-family: 'DM Mono', monospace; font-size: 0.7rem;
+      cursor: pointer; white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fps-chip:hover { border-color: var(--blue); color: var(--blue); }
+    .fps-chip.is-detected { color: var(--green); border-color: rgba(56,217,169,0.3); }
+
+    .video-wrap {
+      flex: 1; min-height: 0;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+
+    #main-video {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+    }
+
+    .vt-overlay {
+      position: absolute; bottom: 7px; right: 9px;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      color: rgba(255,255,255,0.75);
+      background: rgba(0,0,0,0.48);
+      padding: 2px 7px; border-radius: 10px;
+      pointer-events: none;
+    }
+
+    /* mark lines on video */
+    .mark-vline {
+      position: absolute; left: 0; right: 0; height: 2px;
+      pointer-events: none;
+    }
+    .mark-vline.takeoff { background: var(--green); }
+    .mark-vline.landing { background: var(--accent); }
+
+    /* ── Analyzer controls ───────────────────────────────── */
+    .analyzer-controls {
+      flex-shrink: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 9px 12px calc(var(--safe-b) + 9px);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    /* Scrubber */
+    .scrubber-row { display: flex; align-items: center; gap: 7px; }
+    .time-lbl {
+      font-family: 'DM Mono', monospace; font-size: 0.65rem;
+      color: var(--text3); white-space: nowrap; min-width: 30px;
+    }
+    .time-lbl.r { text-align: right; }
+    input[type=range].scrubber {
+      flex: 1; height: 4px; border-radius: 2px;
+      -webkit-appearance: none; appearance: none;
+      background: var(--border2); outline: none; cursor: pointer;
+    }
+    input[type=range].scrubber::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--text1); cursor: pointer;
+    }
+    input[type=range].scrubber::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--text1); border: none; cursor: pointer;
+    }
+
+    /* Playback row */
+    .playback-row {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .btn-step {
+      width: 58px; height: 46px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: transparent; color: var(--text2);
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1px;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; touch-action: none;
+    }
+    .btn-step:active { background: rgba(255,255,255,0.07); }
+    .btn-step span { font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--text3); }
+
+    .btn-play {
+      width: 76px; height: 46px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface2); color: var(--text1);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-play:active { background: rgba(255,255,255,0.06); }
+
+    /* Mark buttons */
+    .marks-row { display: flex; gap: 7px; }
+
+    .btn-mark {
+      flex: 1; padding: 9px 6px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: transparent; color: var(--text3);
+      font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+    }
+    .btn-mark.t-btn { border-color: rgba(56,217,169,0.35); color: var(--green); }
+    .btn-mark.t-btn:hover { background: var(--green-dim); }
+    .btn-mark.l-btn:not(:disabled) { border-color: rgba(244,63,94,0.35); color: var(--accent); }
+    .btn-mark.l-btn:not(:disabled):hover { background: var(--accent-dim); }
+    .btn-mark:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-mark:active:not(:disabled) { opacity: 0.75; }
+
+    /* Result panel */
+    .result-panel {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+
+    .mark-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mark-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .mark-dot.t { background: var(--green); }
+    .mark-dot.l { background: var(--accent); }
+    .mark-lbl { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text3); }
+    .mark-val { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--text1); margin-left: auto; }
+    .btn-clr {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--text3); font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s, color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-clr:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+    .result-divider { height: 1px; background: var(--border); }
+
+    .result-row { display: flex; align-items: center; gap: 6px; }
+    .flight-time { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text3); }
+    .arrow { font-size: 0.75rem; color: var(--text3); }
+    .height-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; font-weight: 500; color: var(--accent); margin-left: auto; }
+    .height-unit { font-size: 0.7rem; color: var(--text3); }
+
+    /* Meta + save */
+    .meta-row { display: flex; align-items: center; gap: 7px; }
+
+    select.sel {
+      flex: 1; padding: 9px 8px;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text1);
+      font-family: 'Outfit', sans-serif; font-size: 0.82rem;
+      -webkit-appearance: none; appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a6e8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 9px center;
+      padding-right: 26px;
+    }
+    select.sel option { background: #111620; }
+
+    .btn-save {
+      padding: 9px 16px; border-radius: 8px; border: none;
+      background: var(--accent); color: #fff;
+      font-family: 'Outfit', sans-serif; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-save:disabled { opacity: 0.25; cursor: not-allowed; }
+    .btn-save:not(:disabled):hover { opacity: 0.87; }
+    .btn-save:not(:disabled):active { opacity: 0.7; }
+
+    /* ── FPS bottom sheet ────────────────────────────────── */
+    .fps-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(10,13,18,0.8);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .fps-overlay.open { opacity: 1; pointer-events: all; }
+
+    .fps-sheet {
+      width: 100%; background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      padding: 14px 16px calc(var(--safe-b) + 20px);
+      display: flex; flex-direction: column; gap: 12px;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+    }
+    .fps-overlay.open .fps-sheet { transform: translateY(0); }
+
+    .fps-handle {
+      width: 36px; height: 4px; background: var(--border2);
+      border-radius: 2px; margin: 0 auto 2px;
+    }
+    .fps-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1rem; color: var(--text1); font-weight: 400;
+    }
+    .fps-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .fps-opt {
+      padding: 11px 4px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text2); font-family: 'DM Mono', monospace; font-size: 0.88rem;
+      cursor: pointer; text-align: center;
+      transition: border-color 0.13s, color 0.13s, background 0.13s;
+    }
+    .fps-opt.active { border-color: rgba(56,217,169,0.4); color: var(--green); background: var(--green-dim); }
+
+    .fps-custom-row { display: flex; gap: 8px; }
+    .fps-input {
+      flex: 1; padding: 9px 12px;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text1);
+      font-family: 'DM Mono', monospace; font-size: 0.9rem;
+      outline: none;
+    }
+    .fps-input:focus { border-color: var(--blue); }
+    .fps-ok {
+      padding: 9px 16px; border-radius: 8px; border: none;
+      background: var(--blue); color: #fff;
+      font-family: 'Outfit', sans-serif; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer;
+    }
+    .fps-hint { font-size: 0.72rem; color: var(--text3); line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     HOME VIEW
+═══════════════════════════════════════════════ -->
+<div id="view-home" class="view">
+  <div class="app-header">
+    <button class="btn-icon" onclick="goHub()" aria-label="Volver al hub">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="header-title">Saltos</span>
+  </div>
+  <div class="scroll-body">
+    <button class="btn-new-jump" onclick="showView('source')">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nuevo salto
+    </button>
+
+    <div id="jumps-empty" class="jumps-empty">
+      <p>Ningún salto registrado.</p>
+      <p style="font-size:0.8rem;margin-top:6px;">Carga o graba un vídeo y marca el despegue y el aterrizaje.</p>
+    </div>
+
+    <div id="jump-list" class="jump-list" hidden></div>
+
+    <div id="summary-bar" class="summary-bar" hidden>
+      <div class="sum-item">
+        <span class="sum-label">Saltos</span>
+        <span class="sum-value" id="sum-count">—</span>
+      </div>
+      <div class="sum-item">
+        <span class="sum-label">Media</span>
+        <span class="sum-value" id="sum-avg">—</span>
+      </div>
+      <div class="sum-item">
+        <span class="sum-label">Mejor</span>
+        <span class="sum-value" id="sum-max">—</span>
+      </div>
+    </div>
+
+    <button id="btn-send" class="btn-primary" onclick="sendToReport()" hidden>Enviar a informe</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SOURCE SELECTOR
+═══════════════════════════════════════════════ -->
+<div id="view-source" class="view" hidden>
+  <div class="app-header">
+    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="header-title">Nuevo salto</span>
+  </div>
+  <div class="scroll-body">
+    <button class="source-card" onclick="openFilePicker()">
+      <div class="source-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="source-name">Cargar vídeo</div>
+        <div class="source-desc">Abre un vídeo de la galería o del dispositivo</div>
+      </div>
+    </button>
+
+    <button class="source-card" onclick="openCamera()">
+      <div class="source-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </div>
+      <div>
+        <div class="source-name">Grabar vídeo</div>
+        <div class="source-desc">Usa la cámara para grabar el salto ahora</div>
+      </div>
+    </button>
+
+    <input id="file-input" type="file" accept="video/*" hidden onchange="loadVideoFile(event)">
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CAMERA VIEW
+═══════════════════════════════════════════════ -->
+<div id="view-camera" class="view" hidden>
+  <div class="app-header">
+    <button class="btn-icon" onclick="cancelCamera()" aria-label="Cancelar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="header-title">Grabar</span>
+  </div>
+  <div class="cam-body">
+    <video id="cam-preview" playsinline muted></video>
+    <div id="rec-badge" class="rec-badge" hidden>
+      <span class="rec-badge-dot"></span>
+      <span id="rec-timer-txt">0:00</span>
+    </div>
+    <div class="cam-controls">
+      <button id="btn-record" class="btn-record" onclick="toggleRecording()" aria-label="Grabar">
+        <div class="btn-record-inner"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     ANALYZER VIEW
+═══════════════════════════════════════════════ -->
+<div id="view-analyzer" class="view" hidden>
+  <div class="analyzer-header">
+    <button class="btn-icon" onclick="closeAnalyzer()" aria-label="Volver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span style="font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:500;color:var(--text1);">Analizando</span>
+    <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()">
+      <span id="fps-chip-txt">— fps</span>
+    </button>
+  </div>
+
+  <div class="video-wrap" id="video-wrap">
+    <video id="main-video" playsinline webkit-playsinline preload="auto"></video>
+    <div class="vt-overlay" id="vt-overlay">0.000 s</div>
+    <div class="mark-vline takeoff" id="vline-takeoff" hidden></div>
+    <div class="mark-vline landing" id="vline-landing" hidden></div>
+  </div>
+
+  <div class="analyzer-controls">
+
+    <div class="scrubber-row">
+      <span class="time-lbl" id="lbl-cur">0.000</span>
+      <input type="range" class="scrubber" id="scrubber"
+        min="0" max="1" step="0.001" value="0"
+        oninput="onScrubInput(this.value)"
+        onchange="onScrubEnd()">
+      <span class="time-lbl r" id="lbl-dur">0.000</span>
+    </div>
+
+    <div class="playback-row">
+      <button class="btn-step"
+        onpointerdown="startStep(-1)" onpointerup="stopStep()"
+        onpointerleave="stopStep()" onpointercancel="stopStep()"
+        aria-label="-1 fotograma">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="19,6 9,12 19,18"/><rect x="5" y="6" width="3" height="12" rx="1"/>
+        </svg>
+        <span>−1f</span>
+      </button>
+
+      <button class="btn-play" id="btn-play" onclick="togglePlay()" aria-label="Play / Pausa">
+        <svg id="ico-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="ico-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      </button>
+
+      <button class="btn-step"
+        onpointerdown="startStep(1)" onpointerup="stopStep()"
+        onpointerleave="stopStep()" onpointercancel="stopStep()"
+        aria-label="+1 fotograma">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5,6 15,12 5,18"/><rect x="16" y="6" width="3" height="12" rx="1"/>
+        </svg>
+        <span>+1f</span>
+      </button>
+    </div>
+
+    <div class="marks-row">
+      <button id="btn-takeoff" class="btn-mark t-btn" onclick="markTakeoff()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        <span id="lbl-takeoff">Despegue</span>
+      </button>
+      <button id="btn-landing" class="btn-mark l-btn" onclick="markLanding()" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg>
+        <span id="lbl-landing">Aterrizaje</span>
+      </button>
+    </div>
+
+    <div id="result-panel" class="result-panel" hidden>
+      <div id="row-takeoff" class="mark-row" hidden>
+        <span class="mark-dot t"></span>
+        <span class="mark-lbl">Despegue</span>
+        <span class="mark-val" id="val-takeoff">—</span>
+        <button class="btn-clr" onclick="clearMark('takeoff')" aria-label="Borrar marca despegue">×</button>
+      </div>
+      <div id="row-landing" class="mark-row" hidden>
+        <span class="mark-dot l"></span>
+        <span class="mark-lbl">Aterrizaje</span>
+        <span class="mark-val" id="val-landing">—</span>
+        <button class="btn-clr" onclick="clearMark('landing')" aria-label="Borrar marca aterrizaje">×</button>
+      </div>
+      <div id="result-divider" class="result-divider" hidden></div>
+      <div id="result-row" class="result-row" hidden>
+        <span class="flight-time" id="flight-time">— ms</span>
+        <span class="arrow">→</span>
+        <span class="height-val" id="height-val">—</span>
+        <span class="height-unit">cm</span>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <select id="sel-type" class="sel" aria-label="Tipo de salto">
+        <option value="CMJ">CMJ</option>
+        <option value="SJ">SJ</option>
+        <option value="DJ">DJ</option>
+        <option value="Mono-D">Mono-D</option>
+        <option value="Mono-I">Mono-I</option>
+      </select>
+      <select id="sel-leg" class="sel" aria-label="Pierna">
+        <option value="both">Ambas</option>
+        <option value="right">Derecha</option>
+        <option value="left">Izquierda</option>
+      </select>
+      <button id="btn-save" class="btn-save" onclick="saveJump()" disabled>Guardar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FPS SHEET
+═══════════════════════════════════════════════ -->
+<div id="fps-overlay" class="fps-overlay" onclick="onFPSOverlayClick(event)">
+  <div class="fps-sheet">
+    <div class="fps-handle"></div>
+    <span class="fps-title">Fotogramas por segundo</span>
+    <div class="fps-grid">
+      <button class="fps-opt" data-v="30"  onclick="setFPS(30)">30</button>
+      <button class="fps-opt" data-v="60"  onclick="setFPS(60)">60</button>
+      <button class="fps-opt" data-v="120" onclick="setFPS(120)">120</button>
+      <button class="fps-opt" data-v="240" onclick="setFPS(240)">240</button>
+    </div>
+    <div class="fps-custom-row">
+      <input type="number" id="fps-input" class="fps-input"
+        placeholder="Personalizar…" min="1" max="1000"
+        onkeydown="if(event.key==='Enter') setFPSCustom()">
+      <button class="fps-ok" onclick="setFPSCustom()">OK</button>
+    </div>
+    <p class="fps-hint">Un mayor número de FPS en el vídeo aumenta la precisión. Los smartphones modernos graban a 60, 120 o 240 fps en modo cámara lenta.</p>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────
+const G = 9.81;
+let jumps       = [];
+let fps         = 60;
+let fpsDetected = false;
+let marks       = { takeoff: null, landing: null };
+let videoSrc    = null;
+let stepTimer   = null;
+let isScrubbing = false;
+let cameraStream   = null;
+let mediaRecorder  = null;
+let recChunks      = [];
+let recTimerInt    = null;
+let recElapsed     = 0;
+
+// ─── View management ──────────────────────────────────────────
+function showView(name) {
+  ['home','source','camera','analyzer'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    const show = v === name;
+    el.hidden = !show;
+    if (show) el.style.display = 'flex'; else el.style.display = '';
+  });
+}
+
+// ─── Hub communication ─────────────────────────────────────────
+function goHub() {
+  window.parent?.postMessage({ type: 'PHYSIQ_GO_HOME' }, '*');
+}
+
+window.addEventListener('message', e => {
+  if (e.data?.type === 'PHYSIQ_SAT_VISIBLE') renderJumpList();
+});
+
+// ─── File loading ──────────────────────────────────────────────
+function openFilePicker() {
+  document.getElementById('file-input').click();
+}
+
+function loadVideoFile(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  e.target.value = '';
+  openAnalyzer(URL.createObjectURL(file));
+}
+
+// ─── Camera recording ──────────────────────────────────────────
+async function openCamera() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    alert('La grabación con cámara no está disponible en este navegador.');
+    return;
+  }
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    const preview = document.getElementById('cam-preview');
+    preview.srcObject = cameraStream;
+    preview.play().catch(() => {});
+    showView('camera');
+  } catch (err) {
+    alert('No se pudo acceder a la cámara: ' + (err.message || err));
+  }
+}
+
+function cancelCamera() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.onstop = null;
+    mediaRecorder.stop();
+  }
+  teardownCamera();
+  showView('source');
+}
+
+function teardownCamera() {
+  if (recTimerInt) { clearInterval(recTimerInt); recTimerInt = null; }
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('btn-record').classList.remove('is-recording');
+  document.getElementById('rec-badge').hidden = true;
+}
+
+function toggleRecording() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+}
+
+function startRecording() {
+  recChunks = [];
+  const mime = (['video/mp4','video/webm;codecs=h264','video/webm','video/ogg']
+    .find(t => MediaRecorder.isTypeSupported(t))) || '';
+
+  mediaRecorder = new MediaRecorder(cameraStream, mime ? { mimeType: mime } : {});
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+    teardownCamera();
+    openAnalyzer(URL.createObjectURL(blob));
+  };
+  mediaRecorder.start(100);
+
+  document.getElementById('btn-record').classList.add('is-recording');
+  document.getElementById('rec-badge').hidden = false;
+  recElapsed = 0;
+  recTimerInt = setInterval(() => {
+    recElapsed++;
+    const m = Math.floor(recElapsed / 60);
+    const s = String(recElapsed % 60).padStart(2, '0');
+    document.getElementById('rec-timer-txt').textContent = m + ':' + s;
+  }, 1000);
+}
+
+function stopRecording() {
+  mediaRecorder?.stop();
+}
+
+// ─── Analyzer lifecycle ────────────────────────────────────────
+const video = document.getElementById('main-video');
+
+function openAnalyzer(src) {
+  if (videoSrc) URL.revokeObjectURL(videoSrc);
+  videoSrc = src;
+  marks    = { takeoff: null, landing: null };
+  fps      = 60;
+  fpsDetected = false;
+  isScrubbing = false;
+
+  video.src = src;
+  video.load();
+
+  updateFPSChip();
+  syncMarkUI();
+  syncResultPanel();
+
+  showView('analyzer');
+
+  video.addEventListener('loadedmetadata', onMeta,       { once: true });
+  video.addEventListener('loadeddata',     onDataLoaded, { once: true });
+  video.addEventListener('timeupdate',     onTimeUpdate);
+  video.addEventListener('play',           syncPlayBtn);
+  video.addEventListener('pause',          syncPlayBtn);
+  video.addEventListener('ended',          syncPlayBtn);
+}
+
+function closeAnalyzer() {
+  video.pause();
+  video.removeEventListener('timeupdate', onTimeUpdate);
+  video.removeEventListener('play',       syncPlayBtn);
+  video.removeEventListener('pause',      syncPlayBtn);
+  video.removeEventListener('ended',      syncPlayBtn);
+  video.src = '';
+  if (videoSrc) { URL.revokeObjectURL(videoSrc); videoSrc = null; }
+  showView('home');
+}
+
+function onMeta() {
+  const dur = video.duration;
+  const scrubber = document.getElementById('scrubber');
+  scrubber.max  = isFinite(dur) ? dur : 1;
+  scrubber.step = 0.001;
+  document.getElementById('lbl-dur').textContent = fmtSec(dur);
+  setCurrentTimeDisplay(0);
+}
+
+async function onDataLoaded() {
+  if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+    const detected = await probeFPS(video);
+    if (detected) {
+      fps = snapFPS(detected);
+      fpsDetected = true;
+      updateFPSChip();
+    }
+  }
+}
+
+function onTimeUpdate() {
+  if (isScrubbing) return;
+  setCurrentTimeDisplay(video.currentTime);
+  document.getElementById('scrubber').value = video.currentTime;
+}
+
+function syncPlayBtn() {
+  document.getElementById('ico-play').hidden  = !video.paused;
+  document.getElementById('ico-pause').hidden =  video.paused;
+}
+
+// ─── Scrubber ─────────────────────────────────────────────────
+function onScrubInput(val) {
+  isScrubbing = true;
+  video.pause();
+  video.currentTime = parseFloat(val);
+  setCurrentTimeDisplay(parseFloat(val));
+}
+
+function onScrubEnd() {
+  isScrubbing = false;
+}
+
+// ─── Playback ─────────────────────────────────────────────────
+function togglePlay() {
+  if (video.paused) video.play(); else video.pause();
+}
+
+// ─── Frame stepping ────────────────────────────────────────────
+function startStep(dir) {
+  doStep(dir);
+  stepTimer = setTimeout(() => {
+    stepTimer = setInterval(() => doStep(dir), 75);
+  }, 360);
+}
+
+function stopStep() {
+  if (stepTimer !== null) {
+    clearTimeout(stepTimer);
+    clearInterval(stepTimer);
+    stepTimer = null;
+  }
+}
+
+function doStep(dir) {
+  video.pause();
+  const fd   = 1 / fps;
+  const next = Math.max(0, Math.min(video.duration || 0, video.currentTime + dir * fd));
+  video.currentTime = next;
+  setCurrentTimeDisplay(next);
+  document.getElementById('scrubber').value = next;
+}
+
+// ─── FPS probing ───────────────────────────────────────────────
+function probeFPS(v) {
+  return new Promise(resolve => {
+    const times = [];
+    let live = true;
+
+    const cleanup = () => { live = false; v.pause(); v.currentTime = 0; };
+
+    const cb = (_, meta) => {
+      if (!live) return;
+      times.push(meta.mediaTime);
+      if (times.length >= 8) {
+        cleanup();
+        const diffs = [];
+        for (let i = 1; i < times.length; i++) {
+          const d = times[i] - times[i - 1];
+          if (d > 0.001) diffs.push(d);
+        }
+        if (!diffs.length) { resolve(null); return; }
+        const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+        resolve(Math.round(1 / avg));
+      } else {
+        v.requestVideoFrameCallback(cb);
+      }
+    };
+
+    v.muted = true;
+    v.requestVideoFrameCallback(cb);
+    v.play().catch(() => { live = false; resolve(null); });
+
+    setTimeout(() => { if (!live) return; cleanup(); resolve(null); }, 3500);
+  });
+}
+
+function snapFPS(raw) {
+  const std = [24, 25, 30, 50, 60, 120, 240];
+  return std.reduce((a, b) => Math.abs(b - raw) < Math.abs(a - raw) ? b : a);
+}
+
+// ─── FPS chip ─────────────────────────────────────────────────
+function updateFPSChip() {
+  document.getElementById('fps-chip-txt').textContent = fps + ' fps';
+  document.getElementById('fps-chip').classList.toggle('is-detected', fpsDetected);
+}
+
+function openFPSSheet() {
+  document.querySelectorAll('.fps-opt').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.v) === fps)
+  );
+  document.getElementById('fps-input').value = '';
+  document.getElementById('fps-overlay').classList.add('open');
+}
+
+function onFPSOverlayClick(e) {
+  if (e.target === e.currentTarget) closeFPSSheet();
+}
+
+function closeFPSSheet() {
+  document.getElementById('fps-overlay').classList.remove('open');
+}
+
+function setFPS(val) {
+  fps = val;
+  fpsDetected = false;
+  updateFPSChip();
+  closeFPSSheet();
+}
+
+function setFPSCustom() {
+  const val = parseInt(document.getElementById('fps-input').value);
+  if (val > 0 && val <= 1000) setFPS(val);
+}
+
+// ─── Marks ────────────────────────────────────────────────────
+function markTakeoff() {
+  marks.takeoff = video.currentTime;
+  if (marks.landing !== null && marks.landing <= marks.takeoff) marks.landing = null;
+  syncMarkUI();
+  syncResultPanel();
+  positionMarkLine('takeoff', marks.takeoff);
+}
+
+function markLanding() {
+  const t = video.currentTime;
+  if (marks.takeoff !== null && t <= marks.takeoff) {
+    navigator.vibrate?.(40);
+    return;
+  }
+  marks.landing = t;
+  syncMarkUI();
+  syncResultPanel();
+  positionMarkLine('landing', marks.landing);
+}
+
+function clearMark(which) {
+  marks[which] = null;
+  if (which === 'takeoff') { marks.landing = null; hideMarkLine('landing'); }
+  hideMarkLine(which);
+  syncMarkUI();
+  syncResultPanel();
+}
+
+function syncMarkUI() {
+  const ht = marks.takeoff !== null;
+  const hl = marks.landing !== null;
+  document.getElementById('lbl-takeoff').textContent = ht ? 'Redefinir' : 'Despegue';
+  document.getElementById('lbl-landing').textContent = hl ? 'Redefinir' : 'Aterrizaje';
+  document.getElementById('btn-landing').disabled    = !ht;
+}
+
+function positionMarkLine(which, time) {
+  const v   = video;
+  const dur = v.duration;
+  if (!isFinite(dur) || dur <= 0) return;
+  const pct   = time / dur;
+  const wrap  = document.getElementById('video-wrap');
+  const vr    = v.getBoundingClientRect();
+  const wr    = wrap.getBoundingClientRect();
+  const vTop  = vr.top - wr.top;
+  const line  = document.getElementById('vline-' + which);
+  line.style.top = (vTop + vr.height * pct) + 'px';
+  line.hidden = false;
+}
+
+function hideMarkLine(which) {
+  document.getElementById('vline-' + which).hidden = true;
+}
+
+function syncResultPanel() {
+  const ht = marks.takeoff !== null;
+  const hl = marks.landing !== null;
+  const hb = ht && hl;
+
+  document.getElementById('result-panel').hidden  = !ht;
+  document.getElementById('row-takeoff').hidden   = !ht;
+  document.getElementById('row-landing').hidden   = !hl;
+  document.getElementById('result-divider').hidden = !hb;
+  document.getElementById('result-row').hidden    = !hb;
+  document.getElementById('btn-save').disabled    = !hb;
+
+  if (ht) document.getElementById('val-takeoff').textContent = marks.takeoff.toFixed(3) + ' s';
+  if (hl) document.getElementById('val-landing').textContent = marks.landing.toFixed(3) + ' s';
+
+  if (hb) {
+    const t = marks.landing - marks.takeoff;
+    const h = (G * t * t) / 8 * 100;
+    document.getElementById('flight-time').textContent = Math.round(t * 1000) + ' ms';
+    document.getElementById('height-val').textContent  = h.toFixed(1);
+  }
+}
+
+// ─── Save ──────────────────────────────────────────────────────
+function saveJump() {
+  if (!marks.takeoff || !marks.landing) return;
+  const t = marks.landing - marks.takeoff;
+  const h = parseFloat(((G * t * t) / 8 * 100).toFixed(1));
+  jumps.push({
+    id:         Date.now(),
+    type:       document.getElementById('sel-type').value,
+    leg:        document.getElementById('sel-leg').value,
+    flightTime: parseFloat(t.toFixed(4)),
+    height:     h,
+    fps,
+  });
+  broadcastJumps();
+  closeAnalyzer();
+  renderJumpList();
+}
+
+// ─── Jump list ─────────────────────────────────────────────────
+const LEG = { both: 'Ambas', right: 'D', left: 'I' };
+
+function renderJumpList() {
+  const list    = document.getElementById('jump-list');
+  const empty   = document.getElementById('jumps-empty');
+  const summary = document.getElementById('summary-bar');
+  const btnSend = document.getElementById('btn-send');
+
+  if (!jumps.length) {
+    list.hidden    = true;
+    empty.hidden   = false;
+    summary.hidden = true;
+    btnSend.hidden = true;
+    return;
+  }
+
+  empty.hidden   = true;
+  list.hidden    = false;
+  summary.hidden = false;
+  btnSend.hidden = false;
+
+  list.innerHTML = jumps.map((j, i) => `
+    <div class="jump-item" style="animation-delay:${i * 0.04}s">
+      <span class="jump-num">${i + 1}</span>
+      <div class="jump-info">
+        <div class="jump-type">${j.type}</div>
+        <div class="jump-meta">${LEG[j.leg] || j.leg} &middot; ${Math.round(j.flightTime * 1000)} ms &middot; ${j.fps} fps</div>
+      </div>
+      <div class="jump-height-wrap">
+        <span class="jump-height">${j.height.toFixed(1)}</span>
+        <span class="jump-height-unit"> cm</span>
+      </div>
+      <button class="btn-del" onclick="deleteJump(${i})" aria-label="Eliminar salto ${i + 1}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+
+  const avg = jumps.reduce((s, j) => s + j.height, 0) / jumps.length;
+  const max = Math.max(...jumps.map(j => j.height));
+  document.getElementById('sum-count').textContent = jumps.length;
+  document.getElementById('sum-avg').textContent   = avg.toFixed(1) + ' cm';
+  document.getElementById('sum-max').textContent   = max.toFixed(1) + ' cm';
+}
+
+function deleteJump(idx) {
+  jumps.splice(idx, 1);
+  broadcastJumps();
+  renderJumpList();
+}
+
+// ─── Broadcast ─────────────────────────────────────────────────
+function broadcastJumps() {
+  try {
+    const avg = jumps.length ? jumps.reduce((s, j) => s + j.height, 0) / jumps.length : null;
+    const max = jumps.length ? Math.max(...jumps.map(j => j.height)) : null;
+    const ch  = new BroadcastChannel('physiq-session');
+    ch.postMessage({
+      type:    'SESSION_JUMP',
+      jumps:   jumps.map(j => ({ ...j })),
+      summary: {
+        count:     jumps.length,
+        avgHeight: avg != null ? parseFloat(avg.toFixed(1)) : null,
+        maxHeight: max != null ? parseFloat(max.toFixed(1)) : null,
+      }
+    });
+    ch.close();
+  } catch (_) {}
+}
+
+function sendToReport() {
+  broadcastJumps();
+  window.parent?.postMessage({ type: 'PHYSIQ_NAVIGATE', to: 'report' }, '*');
+}
+
+// ─── Helpers ───────────────────────────────────────────────────
+function setCurrentTimeDisplay(t) {
+  const s = isFinite(t) ? t : 0;
+  document.getElementById('vt-overlay').textContent = s.toFixed(3) + ' s';
+  document.getElementById('lbl-cur').textContent    = s.toFixed(3);
+}
+
+function fmtSec(s) { return (isFinite(s) ? s : 0).toFixed(3); }
+
+// ─── Init ──────────────────────────────────────────────────────
+renderJumpList();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/physiq/jump/sw.js', { scope: '/physiq/jump/' });
+}
+</script>
+</body>
+</html>
