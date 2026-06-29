@@ -1,0 +1,19 @@
+{
+  "name": "PhysiQ · Saltos",
+  "short_name": "Saltos",
+  "description": "Analizador de altura de salto vertical por tiempo de vuelo",
+  "start_url": "/physiq/jump/",
+  "scope": "/physiq/jump/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e2d3d",
+  "background_color": "#1e2d3d",
+  "icons": [
+    {
+      "src": "/physiq/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
