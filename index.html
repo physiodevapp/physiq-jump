@@ -268,11 +268,16 @@
 
     /* mark lines on video */
     .mark-vline {
-      position: absolute; left: 0; right: 0; height: 2px;
-      pointer-events: none;
+      position: absolute; left: 0; right: 0; height: 28px;
+      transform: translateY(-50%);
+      touch-action: none; cursor: ns-resize;
+      display: flex; align-items: center;
     }
-    .mark-vline.takeoff { background: var(--green); }
-    .mark-vline.landing { background: var(--accent); }
+    .mark-vline::after {
+      content: ''; display: block; width: 100%; height: 2px;
+    }
+    .mark-vline.takeoff::after { background: var(--green); }
+    .mark-vline.landing::after { background: var(--accent); }
 
     /* ── Analyzer controls ───────────────────────────────── */
     .analyzer-controls {
@@ -716,6 +721,7 @@ let jumps       = [];
 let fps         = 60;
 let fpsDetected = false;
 let marks       = { takeoff: null, landing: null };
+let linePos     = { takeoff: null, landing: null };
 let videoSrc    = null;
 let stepTimer   = null;
 let isScrubbing = false;
@@ -836,6 +842,7 @@ function openAnalyzer(src) {
   if (videoSrc) URL.revokeObjectURL(videoSrc);
   videoSrc = src;
   marks    = { takeoff: null, landing: null };
+  linePos  = { takeoff: null, landing: null };
   fps      = 60;
   fpsDetected = false;
   isScrubbing = false;
@@ -1020,7 +1027,7 @@ function markTakeoff() {
   if (marks.landing !== null && marks.landing <= marks.takeoff) marks.landing = null;
   syncMarkUI();
   syncResultPanel();
-  positionMarkLine('takeoff', marks.takeoff);
+  positionMarkLine('takeoff');
 }
 
 function markLanding() {
@@ -1032,12 +1039,13 @@ function markLanding() {
   marks.landing = t;
   syncMarkUI();
   syncResultPanel();
-  positionMarkLine('landing', marks.landing);
+  positionMarkLine('landing');
 }
 
 function clearMark(which) {
   marks[which] = null;
-  if (which === 'takeoff') { marks.landing = null; hideMarkLine('landing'); }
+  linePos[which] = null;
+  if (which === 'takeoff') { marks.landing = null; linePos.landing = null; hideMarkLine('landing'); }
   hideMarkLine(which);
   syncMarkUI();
   syncResultPanel();
@@ -1051,17 +1059,15 @@ function syncMarkUI() {
   document.getElementById('btn-landing').disabled    = !ht;
 }
 
-function positionMarkLine(which, time) {
-  const v   = video;
-  const dur = v.duration;
-  if (!isFinite(dur) || dur <= 0) return;
-  const pct   = time / dur;
-  const wrap  = document.getElementById('video-wrap');
-  const vr    = v.getBoundingClientRect();
-  const wr    = wrap.getBoundingClientRect();
-  const vTop  = vr.top - wr.top;
-  const line  = document.getElementById('vline-' + which);
-  line.style.top = (vTop + vr.height * pct) + 'px';
+function positionMarkLine(which) {
+  const v    = video;
+  const wrap = document.getElementById('video-wrap');
+  const vr   = v.getBoundingClientRect();
+  const wr   = wrap.getBoundingClientRect();
+  const vTop = vr.top - wr.top;
+  if (linePos[which] === null) linePos[which] = 0.5;
+  const line = document.getElementById('vline-' + which);
+  line.style.top = (vTop + vr.height * linePos[which]) + 'px';
   line.hidden = false;
 }
 
@@ -1195,7 +1201,69 @@ function setCurrentTimeDisplay(t) {
 
 function fmtSec(s) { return (isFinite(s) ? s : 0).toFixed(3); }
 
+// ─── Line drag ────────────────────────────────────────────────
+let _drag = null; // { which, startY, moved }
+
+function initLineDrags() {
+  ['takeoff', 'landing'].forEach(which => {
+    const el = document.getElementById('vline-' + which);
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      _drag = { which, startY: e.clientY, moved: false };
+    });
+    el.addEventListener('touchstart', e => {
+      e.preventDefault();
+      _drag = { which, startY: e.touches[0].clientY, moved: false };
+    }, { passive: false });
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!_drag) return;
+    if (Math.abs(e.clientY - _drag.startY) > 4) _drag.moved = true;
+    if (_drag.moved) applyDrag(_drag.which, e.clientY);
+  });
+  document.addEventListener('mouseup', e => {
+    if (!_drag) return;
+    if (!_drag.moved) seekToMark(_drag.which);
+    _drag = null;
+  });
+  document.addEventListener('touchmove', e => {
+    if (!_drag) return;
+    if (Math.abs(e.touches[0].clientY - _drag.startY) > 4) _drag.moved = true;
+    if (_drag.moved) { e.preventDefault(); applyDrag(_drag.which, e.touches[0].clientY); }
+  }, { passive: false });
+  document.addEventListener('touchend', () => {
+    if (!_drag) return;
+    if (!_drag.moved) seekToMark(_drag.which);
+    _drag = null;
+  });
+}
+
+function seekToMark(which) {
+  const t = marks[which];
+  if (t === null) return;
+  video.currentTime = t;
+  setCurrentTimeDisplay(t);
+  document.getElementById('scrubber').value = t;
+}
+
+function applyDrag(which, clientY) {
+  const wrap = document.getElementById('video-wrap');
+  const vr   = video.getBoundingClientRect();
+  const wr   = wrap.getBoundingClientRect();
+  const vTop = vr.top - wr.top;
+  const pct  = Math.max(0, Math.min(1, (clientY - wr.top - vTop) / vr.height));
+  linePos[which] = pct;
+  document.getElementById('vline-' + which).style.top = (vTop + vr.height * pct) + 'px';
+}
+
+window.addEventListener('resize', () => {
+  if (marks.takeoff !== null) positionMarkLine('takeoff');
+  if (marks.landing !== null) positionMarkLine('landing');
+});
+
 // ─── Init ──────────────────────────────────────────────────────
+initLineDrags();
 renderJumpList();
 
 if ('serviceWorker' in navigator) {
