@@ -78,18 +78,6 @@
       display: flex; flex-direction: column; gap: 12px;
     }
 
-    .btn-new-jump {
-      width: 100%; padding: 15px 16px;
-      border-radius: 12px; border: 1.5px dashed var(--border2);
-      background: transparent; color: var(--accent);
-      font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: border-color 0.15s, background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-new-jump:hover { border-color: var(--accent); background: var(--accent-dim); }
-    .btn-new-jump:active { opacity: 0.75; }
-
     .jumps-empty {
       text-align: center; padding: 40px 0;
       color: var(--text3); font-size: 0.88rem; line-height: 1.6;
@@ -188,12 +176,6 @@
     .btn-primary:disabled { opacity: 0.28; cursor: not-allowed; }
 
     /* ── Jump type grid ─────────────────────────────────── */
-    #view-types > .scroll-body {
-      flex: 1; overflow-y: auto;
-      padding: 20px 16px calc(var(--safe-b) + 20px);
-      display: flex; flex-direction: column; gap: 16px;
-    }
-
     .type-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -349,19 +331,6 @@
       pointer-events: none;
     }
 
-    /* mark lines on video */
-    .mark-vline {
-      position: absolute; left: 0; right: 0; height: 28px;
-      transform: translateY(-50%);
-      touch-action: none; cursor: ns-resize;
-      display: flex; align-items: center;
-    }
-    .mark-vline::after {
-      content: ''; display: block; width: 100%; height: 2px;
-    }
-    .mark-vline.takeoff::after { background: var(--green); }
-    .mark-vline.landing::after { background: var(--accent); }
-
     /* ── Analyzer controls ───────────────────────────────── */
     .analyzer-controls {
       flex-shrink: 0;
@@ -378,10 +347,15 @@
       color: var(--text3); white-space: nowrap; min-width: 30px;
     }
     .time-lbl.r { text-align: right; }
+    .scrubber-wrap {
+      flex: 1; position: relative;
+      display: flex; align-items: center;
+    }
     input[type=range].scrubber {
-      flex: 1; height: 4px; border-radius: 2px;
+      width: 100%; height: 4px; border-radius: 2px;
       -webkit-appearance: none; appearance: none;
       background: var(--border2); outline: none; cursor: pointer;
+      position: relative; z-index: 1;
     }
     input[type=range].scrubber::-webkit-slider-thumb {
       -webkit-appearance: none; appearance: none;
@@ -392,6 +366,20 @@
       width: 18px; height: 18px; border-radius: 50%;
       background: var(--text1); border: none; cursor: pointer;
     }
+    #scrubber-markers {
+      position: absolute; left: 9px; right: 9px;
+      top: 50%; transform: translateY(-50%);
+      height: 18px; pointer-events: none; z-index: 0;
+    }
+    .scrubber-marker {
+      position: absolute; top: 0; bottom: 0;
+      width: 3px; border-radius: 1.5px;
+      transform: translateX(-50%);
+      pointer-events: all; cursor: pointer; opacity: 0.85;
+    }
+    .scrubber-marker:hover { opacity: 1; }
+    .scrubber-marker.takeoff { background: var(--green); }
+    .scrubber-marker.landing { background: var(--accent); }
 
     /* Playback row */
     .playback-row {
@@ -573,11 +561,6 @@
     <span class="header-title">Saltos</span>
   </div>
   <div class="scroll-body">
-    <button class="btn-new-jump" onclick="showView('types')">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Nuevo salto
-    </button>
-
     <div id="jump-summary-card" class="summary-card" hidden>
       <div class="summary-header">
         <span class="summary-title">Resumen</span>
@@ -586,7 +569,30 @@
       <div id="jump-type-chips" class="region-chips"></div>
     </div>
 
-    <div id="jumps-empty" class="jumps-empty">
+    <div class="type-grid">
+      <button class="type-card" onclick="selectJumpType('CMJ')" style="animation-delay:0s">
+        <div class="type-card-title">CMJ</div>
+        <div class="type-card-desc">Salto con contramovimiento</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('SJ')" style="animation-delay:0.04s">
+        <div class="type-card-title">SJ</div>
+        <div class="type-card-desc">Squat Jump estático</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('DJ')" style="animation-delay:0.08s">
+        <div class="type-card-title">DJ</div>
+        <div class="type-card-desc">Drop Jump desde caída</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-D')" style="animation-delay:0.12s">
+        <div class="type-card-title">Mono-D</div>
+        <div class="type-card-desc">Monopodal pierna derecha</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-I')" style="animation-delay:0.16s">
+        <div class="type-card-title">Mono-I</div>
+        <div class="type-card-desc">Monopodal pierna izquierda</div>
+      </button>
+    </div>
+
+    <div id="jumps-empty" class="jumps-empty" hidden>
       <p>Ningún salto registrado.</p>
       <p style="font-size:0.8rem;margin-top:6px;">Carga o graba un vídeo y marca el despegue y el aterrizaje.</p>
     </div>
@@ -613,47 +619,11 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
-     JUMP TYPE SELECTOR
-═══════════════════════════════════════════════ -->
-<div id="view-types" class="view" hidden>
-  <div class="app-header">
-    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <span class="header-title">Tipo de salto</span>
-  </div>
-  <div class="scroll-body">
-    <div class="type-grid">
-      <button class="type-card" onclick="selectJumpType('CMJ')" style="animation-delay:0s">
-        <div class="type-card-title">CMJ</div>
-        <div class="type-card-desc">Salto con contramovimiento</div>
-      </button>
-      <button class="type-card" onclick="selectJumpType('SJ')" style="animation-delay:0.04s">
-        <div class="type-card-title">SJ</div>
-        <div class="type-card-desc">Squat Jump estático</div>
-      </button>
-      <button class="type-card" onclick="selectJumpType('DJ')" style="animation-delay:0.08s">
-        <div class="type-card-title">DJ</div>
-        <div class="type-card-desc">Drop Jump desde caída</div>
-      </button>
-      <button class="type-card" onclick="selectJumpType('Mono-D')" style="animation-delay:0.12s">
-        <div class="type-card-title">Mono-D</div>
-        <div class="type-card-desc">Monopodal pierna derecha</div>
-      </button>
-      <button class="type-card" onclick="selectJumpType('Mono-I')" style="animation-delay:0.16s">
-        <div class="type-card-title">Mono-I</div>
-        <div class="type-card-desc">Monopodal pierna izquierda</div>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════
      SOURCE SELECTOR
 ═══════════════════════════════════════════════ -->
 <div id="view-source" class="view" hidden>
   <div class="app-header">
-    <button class="btn-icon" onclick="showView('types')" aria-label="Volver">
+    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <span class="header-title">Nuevo salto</span>
@@ -724,18 +694,19 @@
   <div class="video-wrap" id="video-wrap">
     <video id="main-video" playsinline webkit-playsinline preload="auto"></video>
     <div class="vt-overlay" id="vt-overlay">0.000 s</div>
-    <div class="mark-vline takeoff" id="vline-takeoff" hidden></div>
-    <div class="mark-vline landing" id="vline-landing" hidden></div>
   </div>
 
   <div class="analyzer-controls">
 
     <div class="scrubber-row">
       <span class="time-lbl" id="lbl-cur">0.000</span>
-      <input type="range" class="scrubber" id="scrubber"
-        min="0" max="1" step="0.001" value="0"
-        oninput="onScrubInput(this.value)"
-        onchange="onScrubEnd()">
+      <div class="scrubber-wrap">
+        <input type="range" class="scrubber" id="scrubber"
+          min="0" max="1" step="0.001" value="0"
+          oninput="onScrubInput(this.value)"
+          onchange="onScrubEnd()">
+        <div id="scrubber-markers"></div>
+      </div>
       <span class="time-lbl r" id="lbl-dur">0.000</span>
     </div>
 
@@ -777,21 +748,21 @@
       </button>
     </div>
 
-    <div id="result-panel" class="result-panel" hidden>
-      <div id="row-takeoff" class="mark-row" hidden>
+    <div id="result-panel" class="result-panel">
+      <div id="row-takeoff" class="mark-row" style="opacity:0.3">
         <span class="mark-dot t"></span>
         <span class="mark-lbl">Despegue</span>
         <span class="mark-val" id="val-takeoff">—</span>
         <button class="btn-clr" onclick="clearMark('takeoff')" aria-label="Borrar marca despegue">×</button>
       </div>
-      <div id="row-landing" class="mark-row" hidden>
+      <div id="row-landing" class="mark-row" style="opacity:0.3">
         <span class="mark-dot l"></span>
         <span class="mark-lbl">Aterrizaje</span>
         <span class="mark-val" id="val-landing">—</span>
         <button class="btn-clr" onclick="clearMark('landing')" aria-label="Borrar marca aterrizaje">×</button>
       </div>
-      <div id="result-divider" class="result-divider" hidden></div>
-      <div id="result-row" class="result-row" hidden>
+      <div id="result-divider" class="result-divider" style="opacity:0.15"></div>
+      <div id="result-row" class="result-row" style="opacity:0.15">
         <span class="flight-time" id="flight-time">— ms</span>
         <span class="arrow">→</span>
         <span class="height-val" id="height-val">—</span>
@@ -848,7 +819,6 @@ let jumps        = [];
 let fps          = 60;
 let fpsDetected  = false;
 let marks        = { takeoff: null, landing: null };
-let linePos      = { takeoff: null, landing: null };
 let videoSrc     = null;
 let selectedType     = 'CMJ';
 let activeTypeFilter = null;
@@ -862,7 +832,7 @@ let recElapsed     = 0;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
-  ['home','types','source','camera','analyzer'].forEach(v => {
+  ['home','source','camera','analyzer'].forEach(v => {
     const el = document.getElementById('view-' + v);
     const show = v === name;
     el.hidden = !show;
@@ -976,7 +946,6 @@ function openAnalyzer(src) {
   if (videoSrc) URL.revokeObjectURL(videoSrc);
   videoSrc = src;
   marks    = { takeoff: null, landing: null };
-  linePos  = { takeoff: null, landing: null };
   fps      = 60;
   fpsDetected = false;
   isScrubbing = false;
@@ -985,6 +954,7 @@ function openAnalyzer(src) {
   video.load();
 
   document.getElementById('sel-type').value = selectedType;
+  document.getElementById('scrubber-markers').innerHTML = '';
 
   updateFPSChip();
   syncMarkUI();
@@ -1163,7 +1133,7 @@ function markTakeoff() {
   if (marks.landing !== null && marks.landing <= marks.takeoff) marks.landing = null;
   syncMarkUI();
   syncResultPanel();
-  positionMarkLine('takeoff');
+  updateScrubberMarkers();
 }
 
 function markLanding() {
@@ -1175,16 +1145,15 @@ function markLanding() {
   marks.landing = t;
   syncMarkUI();
   syncResultPanel();
-  positionMarkLine('landing');
+  updateScrubberMarkers();
 }
 
 function clearMark(which) {
   marks[which] = null;
-  linePos[which] = null;
-  if (which === 'takeoff') { marks.landing = null; linePos.landing = null; hideMarkLine('landing'); }
-  hideMarkLine(which);
+  if (which === 'takeoff') marks.landing = null;
   syncMarkUI();
   syncResultPanel();
+  updateScrubberMarkers();
 }
 
 function syncMarkUI() {
@@ -1195,43 +1164,47 @@ function syncMarkUI() {
   document.getElementById('btn-landing').disabled    = !ht;
 }
 
-function positionMarkLine(which) {
-  const v    = video;
-  const wrap = document.getElementById('video-wrap');
-  const vr   = v.getBoundingClientRect();
-  const wr   = wrap.getBoundingClientRect();
-  const vTop = vr.top - wr.top;
-  if (linePos[which] === null) linePos[which] = 0.5;
-  const line = document.getElementById('vline-' + which);
-  line.style.top = (vTop + vr.height * linePos[which]) + 'px';
-  line.hidden = false;
-}
-
-function hideMarkLine(which) {
-  document.getElementById('vline-' + which).hidden = true;
-}
-
 function syncResultPanel() {
   const ht = marks.takeoff !== null;
   const hl = marks.landing !== null;
   const hb = ht && hl;
 
-  document.getElementById('result-panel').hidden  = !ht;
-  document.getElementById('row-takeoff').hidden   = !ht;
-  document.getElementById('row-landing').hidden   = !hl;
-  document.getElementById('result-divider').hidden = !hb;
-  document.getElementById('result-row').hidden    = !hb;
-  document.getElementById('btn-save').disabled    = !hb;
+  document.getElementById('row-takeoff').style.opacity    = ht ? '1' : '0.3';
+  document.getElementById('row-landing').style.opacity    = hl ? '1' : '0.3';
+  document.getElementById('result-divider').style.opacity = hb ? '1' : '0.15';
+  document.getElementById('result-row').style.opacity     = hb ? '1' : '0.15';
+  document.getElementById('btn-save').disabled            = !hb;
 
-  if (ht) document.getElementById('val-takeoff').textContent = marks.takeoff.toFixed(3) + ' s';
-  if (hl) document.getElementById('val-landing').textContent = marks.landing.toFixed(3) + ' s';
+  document.getElementById('val-takeoff').textContent = ht ? marks.takeoff.toFixed(3) + ' s' : '—';
+  document.getElementById('val-landing').textContent = hl ? marks.landing.toFixed(3) + ' s' : '—';
 
   if (hb) {
     const t = marks.landing - marks.takeoff;
     const h = (G * t * t) / 8 * 100;
     document.getElementById('flight-time').textContent = Math.round(t * 1000) + ' ms';
     document.getElementById('height-val').textContent  = h.toFixed(1);
+  } else {
+    document.getElementById('flight-time').textContent = '— ms';
+    document.getElementById('height-val').textContent  = '—';
   }
+}
+
+function updateScrubberMarkers() {
+  const container = document.getElementById('scrubber-markers');
+  const dur = video.duration;
+  if (!container || !isFinite(dur) || dur === 0) return;
+  container.innerHTML = '';
+  [['takeoff', 'takeoff'], ['landing', 'landing']].forEach(([which, cls]) => {
+    const t = marks[which];
+    if (t === null) return;
+    const pct = (t / dur) * 100;
+    const el = document.createElement('div');
+    el.className = 'scrubber-marker ' + cls;
+    el.style.left = pct + '%';
+    el.title = which === 'takeoff' ? 'Ir a despegue' : 'Ir a aterrizaje';
+    el.addEventListener('click', () => seekToMark(which));
+    container.appendChild(el);
+  });
 }
 
 // ─── Save ──────────────────────────────────────────────────────
@@ -1383,44 +1356,6 @@ function setCurrentTimeDisplay(t) {
 
 function fmtSec(s) { return (isFinite(s) ? s : 0).toFixed(3); }
 
-// ─── Line drag ────────────────────────────────────────────────
-let _drag = null; // { which, startY, moved }
-
-function initLineDrags() {
-  ['takeoff', 'landing'].forEach(which => {
-    const el = document.getElementById('vline-' + which);
-    el.addEventListener('mousedown', e => {
-      e.preventDefault();
-      _drag = { which, startY: e.clientY, moved: false };
-    });
-    el.addEventListener('touchstart', e => {
-      e.preventDefault();
-      _drag = { which, startY: e.touches[0].clientY, moved: false };
-    }, { passive: false });
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!_drag) return;
-    if (Math.abs(e.clientY - _drag.startY) > 4) _drag.moved = true;
-    if (_drag.moved) applyDrag(_drag.which, e.clientY);
-  });
-  document.addEventListener('mouseup', e => {
-    if (!_drag) return;
-    if (!_drag.moved) seekToMark(_drag.which);
-    _drag = null;
-  });
-  document.addEventListener('touchmove', e => {
-    if (!_drag) return;
-    if (Math.abs(e.touches[0].clientY - _drag.startY) > 4) _drag.moved = true;
-    if (_drag.moved) { e.preventDefault(); applyDrag(_drag.which, e.touches[0].clientY); }
-  }, { passive: false });
-  document.addEventListener('touchend', () => {
-    if (!_drag) return;
-    if (!_drag.moved) seekToMark(_drag.which);
-    _drag = null;
-  });
-}
-
 function seekToMark(which) {
   const t = marks[which];
   if (t === null) return;
@@ -1429,23 +1364,7 @@ function seekToMark(which) {
   document.getElementById('scrubber').value = t;
 }
 
-function applyDrag(which, clientY) {
-  const wrap = document.getElementById('video-wrap');
-  const vr   = video.getBoundingClientRect();
-  const wr   = wrap.getBoundingClientRect();
-  const vTop = vr.top - wr.top;
-  const pct  = Math.max(0, Math.min(1, (clientY - wr.top - vTop) / vr.height));
-  linePos[which] = pct;
-  document.getElementById('vline-' + which).style.top = (vTop + vr.height * pct) + 'px';
-}
-
-window.addEventListener('resize', () => {
-  if (marks.takeoff !== null) positionMarkLine('takeoff');
-  if (marks.landing !== null) positionMarkLine('landing');
-});
-
 // ─── Init ──────────────────────────────────────────────────────
-initLineDrags();
 renderJumpList();
 
 if ('serviceWorker' in navigator) {
