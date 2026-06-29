@@ -126,6 +126,45 @@
     }
     .btn-del:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
 
+    /* ── Summary card ───────────────────────────────── */
+    .summary-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .summary-header {
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .summary-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1rem; color: var(--accent); font-weight: 400;
+    }
+    .btn-copy {
+      background: none; border: 1px solid var(--border2);
+      border-radius: 8px; padding: 5px 10px;
+      font-size: 0.72rem; color: var(--text2); cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-copy:hover { border-color: var(--accent); color: var(--text1); }
+    .region-chips {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px;
+    }
+    .region-chip {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 10px;
+      font-family: 'DM Mono', monospace; font-size: 0.68rem;
+      color: var(--text2); cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .region-chip:hover { border-color: var(--accent); color: var(--text1); }
+    .region-chip.active {
+      border-color: rgba(244,63,94,0.5); color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .region-chip .chip-count { color: var(--accent); }
+
     .summary-bar {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 13px 16px;
@@ -147,6 +186,50 @@
     .btn-primary:hover { opacity: 0.87; }
     .btn-primary:active { opacity: 0.7; }
     .btn-primary:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    /* ── Jump type grid ─────────────────────────────────── */
+    #view-types > .scroll-body {
+      flex: 1; overflow-y: auto;
+      padding: 20px 16px calc(var(--safe-b) + 20px);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .type-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 18px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer; text-align: left;
+      transition: border-color 0.15s, transform 0.1s;
+      animation: fadeUp 0.25s ease both;
+      position: relative; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .type-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: 0.6;
+    }
+    .type-card:hover { border-color: var(--border2); }
+    .type-card:active { transform: scale(0.97); }
+
+    .type-card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem; font-weight: 500;
+      color: var(--text1);
+    }
+    .type-card-desc {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem; color: var(--text3); line-height: 1.4;
+    }
 
     /* ── Source selector ─────────────────────────────────── */
     #view-source > .scroll-body {
@@ -490,10 +573,18 @@
     <span class="header-title">Saltos</span>
   </div>
   <div class="scroll-body">
-    <button class="btn-new-jump" onclick="showView('source')">
+    <button class="btn-new-jump" onclick="showView('types')">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo salto
     </button>
+
+    <div id="jump-summary-card" class="summary-card" hidden>
+      <div class="summary-header">
+        <span class="summary-title">Resumen</span>
+        <button id="btn-copy-jumps" class="btn-copy" onclick="copyJumpsToClipboard()">📋 Copiar</button>
+      </div>
+      <div id="jump-type-chips" class="region-chips"></div>
+    </div>
 
     <div id="jumps-empty" class="jumps-empty">
       <p>Ningún salto registrado.</p>
@@ -522,11 +613,47 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
+     JUMP TYPE SELECTOR
+═══════════════════════════════════════════════ -->
+<div id="view-types" class="view" hidden>
+  <div class="app-header">
+    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="header-title">Tipo de salto</span>
+  </div>
+  <div class="scroll-body">
+    <div class="type-grid">
+      <button class="type-card" onclick="selectJumpType('CMJ')" style="animation-delay:0s">
+        <div class="type-card-title">CMJ</div>
+        <div class="type-card-desc">Salto con contramovimiento</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('SJ')" style="animation-delay:0.04s">
+        <div class="type-card-title">SJ</div>
+        <div class="type-card-desc">Squat Jump estático</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('DJ')" style="animation-delay:0.08s">
+        <div class="type-card-title">DJ</div>
+        <div class="type-card-desc">Drop Jump desde caída</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-D')" style="animation-delay:0.12s">
+        <div class="type-card-title">Mono-D</div>
+        <div class="type-card-desc">Monopodal pierna derecha</div>
+      </button>
+      <button class="type-card" onclick="selectJumpType('Mono-I')" style="animation-delay:0.16s">
+        <div class="type-card-title">Mono-I</div>
+        <div class="type-card-desc">Monopodal pierna izquierda</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      SOURCE SELECTOR
 ═══════════════════════════════════════════════ -->
 <div id="view-source" class="view" hidden>
   <div class="app-header">
-    <button class="btn-icon" onclick="showView('home')" aria-label="Volver">
+    <button class="btn-icon" onclick="showView('types')" aria-label="Volver">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <span class="header-title">Nuevo salto</span>
@@ -717,12 +844,14 @@
 <script>
 // ─── State ────────────────────────────────────────────────────
 const G = 9.81;
-let jumps       = [];
-let fps         = 60;
-let fpsDetected = false;
-let marks       = { takeoff: null, landing: null };
-let linePos     = { takeoff: null, landing: null };
-let videoSrc    = null;
+let jumps        = [];
+let fps          = 60;
+let fpsDetected  = false;
+let marks        = { takeoff: null, landing: null };
+let linePos      = { takeoff: null, landing: null };
+let videoSrc     = null;
+let selectedType     = 'CMJ';
+let activeTypeFilter = null;
 let stepTimer   = null;
 let isScrubbing = false;
 let cameraStream   = null;
@@ -733,12 +862,17 @@ let recElapsed     = 0;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
-  ['home','source','camera','analyzer'].forEach(v => {
+  ['home','types','source','camera','analyzer'].forEach(v => {
     const el = document.getElementById('view-' + v);
     const show = v === name;
     el.hidden = !show;
     if (show) el.style.display = 'flex'; else el.style.display = '';
   });
+}
+
+function selectJumpType(type) {
+  selectedType = type;
+  showView('source');
 }
 
 // ─── Hub communication ─────────────────────────────────────────
@@ -849,6 +983,8 @@ function openAnalyzer(src) {
 
   video.src = src;
   video.load();
+
+  document.getElementById('sel-type').value = selectedType;
 
   updateFPSChip();
   syncMarkUI();
@@ -1123,24 +1259,40 @@ function renderJumpList() {
   const list    = document.getElementById('jump-list');
   const empty   = document.getElementById('jumps-empty');
   const summary = document.getElementById('summary-bar');
+  const sumCard = document.getElementById('jump-summary-card');
   const btnSend = document.getElementById('btn-send');
 
   if (!jumps.length) {
     list.hidden    = true;
     empty.hidden   = false;
     summary.hidden = true;
+    sumCard.hidden = true;
     btnSend.hidden = true;
+    activeTypeFilter = null;
     return;
   }
 
   empty.hidden   = true;
-  list.hidden    = false;
   summary.hidden = false;
+  sumCard.hidden = false;
   btnSend.hidden = false;
 
-  list.innerHTML = jumps.map((j, i) => `
+  // Build type chips
+  const typeCounts = jumps.reduce((acc, j) => { acc[j.type] = (acc[j.type] || 0) + 1; return acc; }, {});
+  document.getElementById('jump-type-chips').innerHTML = Object.entries(typeCounts)
+    .map(([type, count]) =>
+      `<span class="region-chip${activeTypeFilter === type ? ' active' : ''}" onclick="toggleChipFilter('${type}')">${type} <span class="chip-count">${count}</span></span>`
+    ).join('');
+
+  // Apply filter
+  const displayed = activeTypeFilter ? jumps.filter(j => j.type === activeTypeFilter) : jumps;
+
+  list.hidden    = false;
+  list.innerHTML = displayed.map((j, i) => {
+    const realIdx = jumps.indexOf(j);
+    return `
     <div class="jump-item" style="animation-delay:${i * 0.04}s">
-      <span class="jump-num">${i + 1}</span>
+      <span class="jump-num">${realIdx + 1}</span>
       <div class="jump-info">
         <div class="jump-type">${j.type}</div>
         <div class="jump-meta">${LEG[j.leg] || j.leg} &middot; ${Math.round(j.flightTime * 1000)} ms &middot; ${j.fps} fps</div>
@@ -1149,17 +1301,47 @@ function renderJumpList() {
         <span class="jump-height">${j.height.toFixed(1)}</span>
         <span class="jump-height-unit"> cm</span>
       </div>
-      <button class="btn-del" onclick="deleteJump(${i})" aria-label="Eliminar salto ${i + 1}">
+      <button class="btn-del" onclick="deleteJump(${realIdx})" aria-label="Eliminar salto ${realIdx + 1}">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   const avg = jumps.reduce((s, j) => s + j.height, 0) / jumps.length;
   const max = Math.max(...jumps.map(j => j.height));
   document.getElementById('sum-count').textContent = jumps.length;
   document.getElementById('sum-avg').textContent   = avg.toFixed(1) + ' cm';
   document.getElementById('sum-max').textContent   = max.toFixed(1) + ' cm';
+}
+
+function toggleChipFilter(type) {
+  activeTypeFilter = activeTypeFilter === type ? null : type;
+  renderJumpList();
+}
+
+function copyJumpsToClipboard() {
+  const date = new Date().toLocaleDateString('es-ES');
+  const byType = jumps.reduce((acc, j) => { (acc[j.type] = acc[j.type] || []).push(j); return acc; }, {});
+
+  const sections = Object.entries(byType).map(([type, list]) => {
+    const lines = list.map((j, i) =>
+      `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)`
+    );
+    if (list.length > 1) {
+      const avg = list.reduce((s, j) => s + j.height, 0) / list.length;
+      const max = Math.max(...list.map(j => j.height));
+      lines.push(`  Media: ${avg.toFixed(1)} cm | Mejor: ${max.toFixed(1)} cm`);
+    }
+    return `${type} (${list.length} ${list.length === 1 ? 'salto' : 'saltos'}):\n${lines.join('\n')}`;
+  });
+
+  const text = `SALTOS PhysiQ-Jump\nFecha: ${date}\n\n${sections.join('\n\n')}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-copy-jumps');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }).catch(() => {});
 }
 
 function deleteJump(idx) {
