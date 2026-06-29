@@ -829,8 +829,9 @@ let mediaRecorder  = null;
 let recChunks      = [];
 let recTimerInt    = null;
 let recElapsed     = 0;
-let currentView = 'home';
-let navDepth    = 0;
+let currentView   = 'home';
+let navDepth      = 0;
+let _popstateLock = false;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
@@ -851,6 +852,7 @@ function navigateTo(name) {
 
 // ─── Back gesture / system back button ────────────────────────
 window.addEventListener('popstate', e => {
+  if (_popstateLock) { _popstateLock = false; return; }
   const leavingView = currentView;
   navDepth = e.state?.depth ?? 0;
   const targetView = e.state?.view ?? 'home';
@@ -927,6 +929,8 @@ function cancelCamera() {
     mediaRecorder.stop();
   }
   teardownCamera();
+  showView('source');
+  _popstateLock = true;
   history.back();
 }
 
@@ -1016,11 +1020,12 @@ function closeAnalyzer() {
   video.removeEventListener('ended',      syncPlayBtn);
   video.src = '';
   if (videoSrc) { URL.revokeObjectURL(videoSrc); videoSrc = null; }
+  showView('home');
   if (navDepth > 0) {
+    _popstateLock = true;
     history.go(-navDepth);
-  } else {
-    showView('home');
   }
+  navDepth = 0;
 }
 
 function onMeta() {
