@@ -1,0 +1,36 @@
+name: Deploy to physiq/jump
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout physiq-jump
+        uses: actions/checkout@v4
+        with:
+          path: satellite
+
+      - name: Checkout physiq hub
+        uses: actions/checkout@v4
+        with:
+          repository: physiodevapp/physiq
+          token: ${{ secrets.PHYSIQ_DEPLOY_TOKEN }}
+          path: hub
+
+      - name: Copy files to hub/jump/
+        run: |
+          rm -rf hub/jump
+          mkdir -p hub/jump
+          rsync -a --exclude='.git' --exclude='.github' satellite/ hub/jump/
+
+      - name: Commit and push
+        run: |
+          cd hub
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add jump/
+          git diff --cached --quiet || git commit -m "deploy: update jump satellite"
+          git push
