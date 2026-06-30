@@ -548,17 +548,42 @@
     /* Meta + save */
     .meta-row { display: flex; align-items: center; gap: 7px; }
 
-    select.sel {
-      flex: 1; padding: 9px 8px;
+    .sel-btn {
+      flex: 1; padding: 9px 10px;
       border-radius: 8px; border: 1px solid var(--border);
       background: var(--surface2); color: var(--text1);
       font-family: 'Outfit', sans-serif; font-size: 0.82rem;
-      -webkit-appearance: none; appearance: none; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a6e8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 9px center;
-      padding-right: 26px;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s;
     }
-    select.sel option { background: #111620; }
+    .sel-btn:hover { border-color: var(--border2); }
+    .sel-btn-val { flex: 1; text-align: left; }
+    .sel-btn svg { flex-shrink: 0; color: var(--text3); }
+
+    /* ── Picker options ──────────────────────────────────── */
+    .picker-list { display: flex; flex-direction: column; }
+    .picker-opt {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px; font-size: 0.88rem; color: var(--text1);
+      cursor: pointer; border-radius: 8px; border: none; width: 100%;
+      background: none; font-family: 'Outfit', sans-serif; text-align: left;
+      transition: background 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .picker-opt:hover { background: rgba(255,255,255,0.04); }
+    .picker-opt.active { color: var(--green); }
+    .picker-check { font-size: 0.8rem; color: var(--green); opacity: 0; flex-shrink: 0; }
+    .picker-opt.active .picker-check { opacity: 1; }
+
+    /* ── Finalizar button ────────────────────────────────── */
+    .btn-finish {
+      width: 100%; padding: 12px; border-radius: 10px; margin-top: 6px;
+      border: 1px solid var(--green); background: transparent;
+      color: var(--green); font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem; font-weight: 500; cursor: pointer;
+      transition: background 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-finish:hover { background: var(--green-dim); }
 
     .btn-save {
       padding: 9px 16px; border-radius: 8px; border: none;
@@ -884,20 +909,17 @@
     </div>
 
     <div class="meta-row">
-      <select id="sel-type" class="sel" aria-label="Tipo de salto">
-        <option value="CMJ">CMJ</option>
-        <option value="SJ">SJ</option>
-        <option value="DJ">DJ</option>
-        <option value="Mono-D">Mono-D</option>
-        <option value="Mono-I">Mono-I</option>
-      </select>
-      <select id="sel-leg" class="sel" aria-label="Pierna">
-        <option value="both">Ambas</option>
-        <option value="right">Derecha</option>
-        <option value="left">Izquierda</option>
-      </select>
+      <button id="sel-type-btn" class="sel-btn" onclick="openTypePicker()" aria-label="Tipo de salto">
+        <span id="sel-type-val" class="sel-btn-val">CMJ</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <button id="sel-leg-btn" class="sel-btn" onclick="openLegPicker()" aria-label="Pierna">
+        <span id="sel-leg-val" class="sel-btn-val">Ambas</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
       <button id="btn-save" class="btn-save" onclick="saveJump()" disabled>Guardar</button>
     </div>
+    <button id="btn-finish" class="btn-finish" onclick="closeAnalyzer()" hidden>Finalizar análisis</button>
 
   </div>
 </div>
@@ -955,6 +977,17 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     PICKER SHEET (tipo / pierna)
+═══════════════════════════════════════════════ -->
+<div id="picker-overlay" class="fps-overlay" onclick="onPickerOverlayClick(event)">
+  <div class="fps-sheet">
+    <div class="fps-handle"></div>
+    <span class="fps-title" id="picker-title"></span>
+    <div class="picker-list" id="picker-list"></div>
+  </div>
+</div>
+
 <script>
 // ─── State ────────────────────────────────────────────────────
 const G = 9.81;
@@ -963,6 +996,7 @@ let videoJumpCount = 0;
 let fps            = 60;
 let fpsDetected    = false;
 let marks          = { takeoff: null, landing: null };
+let selectedLeg    = 'both';
 let videoSrc       = null;
 let selectedType     = 'CMJ';
 let activeTypeFilter = null;
@@ -1150,7 +1184,9 @@ function openAnalyzer(src) {
   video.src = src;
   video.load();
 
-  document.getElementById('sel-type').value = selectedType;
+  selectedLeg = 'both';
+  document.getElementById('sel-type-val').textContent = selectedType;
+  document.getElementById('sel-leg-val').textContent  = 'Ambas';
   document.getElementById('scrubber-markers').innerHTML = '';
   document.getElementById('scrubber-marker-heads').innerHTML = '';
 
@@ -1334,6 +1370,56 @@ function setFPSCustom() {
   if (val > 0 && val <= 1000) setFPS(val);
 }
 
+// ─── Pickers (tipo / pierna) ───────────────────────────────────
+const TYPE_OPTIONS = [
+  { value: 'CMJ',    label: 'CMJ — Contramovimiento' },
+  { value: 'SJ',     label: 'SJ — Squat jump' },
+  { value: 'DJ',     label: 'DJ — Drop jump' },
+  { value: 'Mono-D', label: 'Mono-D — Monopodal derecha' },
+  { value: 'Mono-I', label: 'Mono-I — Monopodal izquierda' },
+];
+const LEG_OPTIONS = [
+  { value: 'both',  label: 'Ambas' },
+  { value: 'right', label: 'Derecha' },
+  { value: 'left',  label: 'Izquierda' },
+];
+let _pickerCallback = null;
+
+function openPicker(title, options, currentValue, onSelect) {
+  _pickerCallback = onSelect;
+  document.getElementById('picker-title').textContent = title;
+  document.getElementById('picker-list').innerHTML = options.map(opt => `
+    <button class="picker-opt${opt.value === currentValue ? ' active' : ''}"
+            onclick="selectPickerOpt('${opt.value}')">
+      <span>${opt.label}</span>
+      <span class="picker-check">✓</span>
+    </button>`).join('');
+  document.getElementById('picker-overlay').classList.add('open');
+}
+
+function selectPickerOpt(value) {
+  _pickerCallback?.(value);
+  document.getElementById('picker-overlay').classList.remove('open');
+}
+
+function onPickerOverlayClick(e) {
+  if (e.target === e.currentTarget) document.getElementById('picker-overlay').classList.remove('open');
+}
+
+function openTypePicker() {
+  openPicker('Tipo de salto', TYPE_OPTIONS, selectedType, val => {
+    selectedType = val;
+    document.getElementById('sel-type-val').textContent = val;
+  });
+}
+
+function openLegPicker() {
+  openPicker('Pierna', LEG_OPTIONS, selectedLeg, val => {
+    selectedLeg = val;
+    document.getElementById('sel-leg-val').textContent = LEG_OPTIONS.find(o => o.value === val).label;
+  });
+}
+
 // ─── Marks ────────────────────────────────────────────────────
 function markTakeoff() {
   marks.takeoff = video.currentTime;
@@ -1432,8 +1518,8 @@ function saveJump() {
   videoJumpCount++;
   jumps.push({
     id:         Date.now(),
-    type:       document.getElementById('sel-type').value,
-    leg:        document.getElementById('sel-leg').value,
+    type:       selectedType,
+    leg:        selectedLeg,
     flightTime: parseFloat(t.toFixed(4)),
     height:     h,
     fps,
@@ -1451,12 +1537,15 @@ function saveJump() {
 }
 
 function _syncAnalyzerHeader() {
-  const el = document.getElementById('analyzer-title');
-  if (!el) return;
+  const title  = document.getElementById('analyzer-title');
+  const finish = document.getElementById('btn-finish');
+  if (!title) return;
   if (videoJumpCount === 0) {
-    el.textContent = 'Analizando';
+    title.textContent = 'Analizando';
+    if (finish) finish.hidden = true;
   } else {
-    el.textContent = videoJumpCount === 1 ? '1 salto guardado' : `${videoJumpCount} saltos guardados`;
+    title.textContent = videoJumpCount === 1 ? '1 salto guardado' : `${videoJumpCount} saltos guardados`;
+    if (finish) finish.hidden = false;
   }
 }
 
