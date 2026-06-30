@@ -575,8 +575,7 @@
     /* ── FPS bottom sheet ────────────────────────────────── */
     .fps-overlay {
       position: fixed; inset: 0; z-index: 200;
-      background: rgba(10,13,18,0.8);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      background: rgba(10,13,18,0.7);
       display: flex; align-items: flex-end;
       opacity: 0; pointer-events: none;
       transition: opacity 0.2s;
@@ -598,6 +597,56 @@
       width: 36px; height: 4px; background: var(--border2);
       border-radius: 2px; margin: 0 auto 2px;
     }
+
+    @media (min-width: 640px) {
+      .fps-overlay {
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        align-items: center; justify-content: center;
+      }
+      .fps-sheet {
+        width: min(440px, 90%);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        border-top: 1px solid var(--border);
+        padding-bottom: 20px;
+        transform: scale(0.96);
+        opacity: 0;
+        transition: transform 0.22s cubic-bezier(0.32,0.72,0,1), opacity 0.22s ease;
+      }
+      .fps-overlay.open .fps-sheet { transform: scale(1); opacity: 1; }
+      .fps-handle { display: none; }
+    }
+
+    /* ── Notice dialog ───────────────────────────────────── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .notice-banner {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      animation: fadeUp 0.2s ease;
+    }
+    .notice-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.8rem;
+      max-width: 400px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .notice-box-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem; color: var(--text1); margin-bottom: 0.5rem;
+    }
+    .notice-box-text {
+      font-size: 0.83rem; color: var(--text2);
+      line-height: 1.5; margin-bottom: 1.4rem;
+    }
+    .notice-btn-ok {
+      background: var(--blue); border: none; color: #fff;
+      border-radius: 8px; padding: 9px 18px;
+      font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: opacity 0.2s; float: right;
+    }
+    .notice-btn-ok:hover { opacity: 0.87; }
     .fps-title {
       font-family: 'DM Serif Display', serif;
       font-size: 1rem; color: var(--text1); font-weight: 400;
@@ -997,10 +1046,23 @@ function loadVideoFile(e) {
   openAnalyzer(URL.createObjectURL(file));
 }
 
+function showNotice(title, text) {
+  const overlay = document.createElement('div');
+  overlay.className = 'notice-banner';
+  overlay.innerHTML = `
+    <div class="notice-box">
+      <div class="notice-box-title">${title}</div>
+      <div class="notice-box-text">${text}</div>
+      <button class="notice-btn-ok" onclick="this.closest('.notice-banner').remove()">Entendido</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 // ─── Camera recording ──────────────────────────────────────────
 async function openCamera() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    alert('La grabación con cámara no está disponible en este navegador.');
+    showNotice('Cámara no disponible', 'La grabación con cámara no está disponible en este navegador.');
     return;
   }
   try {
@@ -1013,7 +1075,7 @@ async function openCamera() {
     preview.play().catch(() => {});
     navigateTo('camera');
   } catch (err) {
-    alert('No se pudo acceder a la cámara: ' + (err.message || err));
+    showNotice('Error de cámara', 'No se pudo acceder a la cámara: ' + (err.message || err));
   }
 }
 
