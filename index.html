@@ -86,7 +86,8 @@
     }
 
     /* ── Home view ───────────────────────────────────────── */
-    #view-home > .scroll-body {
+    #view-home > .scroll-body,
+    #view-results > .scroll-body {
       flex: 1; overflow-y: auto;
       padding: 16px 16px calc(var(--safe-b) + 16px);
       display: flex; flex-direction: column; gap: 12px;
@@ -607,29 +608,6 @@
       </button>
     </div>
 
-    <div id="jumps-empty" class="jumps-empty" hidden>
-      <p>Ningún salto registrado.</p>
-      <p style="font-size:0.8rem;margin-top:6px;">Carga o graba un vídeo y marca el despegue y el aterrizaje.</p>
-    </div>
-
-    <div id="jump-list" class="jump-list" hidden></div>
-
-    <div id="summary-bar" class="summary-bar" hidden>
-      <div class="sum-item">
-        <span class="sum-label">Saltos</span>
-        <span class="sum-value" id="sum-count">—</span>
-      </div>
-      <div class="sum-item">
-        <span class="sum-label">Media</span>
-        <span class="sum-value" id="sum-avg">—</span>
-      </div>
-      <div class="sum-item">
-        <span class="sum-label">Mejor</span>
-        <span class="sum-value" id="sum-max">—</span>
-      </div>
-    </div>
-
-    <button id="btn-send" class="btn-primary" onclick="sendToReport()" hidden>Enviar a informe</button>
   </div>
 </div>
 
@@ -805,6 +783,36 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
+     RESULTS VIEW
+═══════════════════════════════════════════════ -->
+<div id="view-results" class="view" hidden>
+  <div class="app-header">
+    <button class="btn-icon" onclick="history.back()" aria-label="Volver">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="header-title" id="results-title">Resultados</span>
+  </div>
+  <div class="scroll-body">
+    <div id="results-jump-list" class="jump-list"></div>
+    <div class="summary-bar">
+      <div class="sum-item">
+        <span class="sum-label">Saltos</span>
+        <span class="sum-value" id="results-sum-count">—</span>
+      </div>
+      <div class="sum-item">
+        <span class="sum-label">Media</span>
+        <span class="sum-value" id="results-sum-avg">—</span>
+      </div>
+      <div class="sum-item">
+        <span class="sum-label">Mejor</span>
+        <span class="sum-value" id="results-sum-max">—</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="sendToReport()">Enviar a informe</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      FPS SHEET
 ═══════════════════════════════════════════════ -->
 <div id="fps-overlay" class="fps-overlay" onclick="onFPSOverlayClick(event)">
@@ -850,7 +858,7 @@ let _popstateLock = false;
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
-  ['home','source','camera','analyzer'].forEach(v => {
+  ['home','source','camera','analyzer','results'].forEach(v => {
     const el = document.getElementById('view-' + v);
     const show = v === name;
     el.hidden = !show;
@@ -1291,39 +1299,35 @@ function saveJump() {
 const LEG = { both: 'Ambas', right: 'D', left: 'I' };
 
 function renderJumpList() {
-  const list    = document.getElementById('jump-list');
-  const empty   = document.getElementById('jumps-empty');
-  const summary = document.getElementById('summary-bar');
   const sumCard = document.getElementById('jump-summary-card');
-  const btnSend = document.getElementById('btn-send');
 
   if (!jumps.length) {
-    list.hidden    = true;
-    empty.hidden   = false;
-    summary.hidden = true;
     sumCard.hidden = true;
-    btnSend.hidden = true;
     activeTypeFilter = null;
     return;
   }
 
-  empty.hidden   = true;
-  summary.hidden = false;
   sumCard.hidden = false;
-  btnSend.hidden = false;
 
-  // Build type chips
   const typeCounts = jumps.reduce((acc, j) => { acc[j.type] = (acc[j.type] || 0) + 1; return acc; }, {});
   document.getElementById('jump-type-chips').innerHTML = Object.entries(typeCounts)
     .map(([type, count]) =>
-      `<span class="region-chip${activeTypeFilter === type ? ' active' : ''}" onclick="toggleChipFilter('${type}')">${type} <span class="chip-count">${count}</span></span>`
+      `<span class="region-chip" onclick="openResultsView('${type}')">${type} <span class="chip-count">${count}</span></span>`
     ).join('');
+}
 
-  // Apply filter
-  const displayed = activeTypeFilter ? jumps.filter(j => j.type === activeTypeFilter) : jumps;
+function openResultsView(type) {
+  activeTypeFilter = type;
+  document.getElementById('results-title').textContent = type;
+  renderResultsView();
+  navigateTo('results');
+}
 
-  list.hidden    = false;
-  list.innerHTML = displayed.map((j, i) => {
+function renderResultsView() {
+  const filtered = jumps.filter(j => j.type === activeTypeFilter);
+  const list = document.getElementById('results-jump-list');
+
+  list.innerHTML = filtered.map((j, i) => {
     const realIdx = jumps.indexOf(j);
     return `
     <div class="jump-item" style="animation-delay:${i * 0.04}s">
@@ -1342,16 +1346,13 @@ function renderJumpList() {
     </div>`;
   }).join('');
 
-  const avg = jumps.reduce((s, j) => s + j.height, 0) / jumps.length;
-  const max = Math.max(...jumps.map(j => j.height));
-  document.getElementById('sum-count').textContent = jumps.length;
-  document.getElementById('sum-avg').textContent   = avg.toFixed(1) + ' cm';
-  document.getElementById('sum-max').textContent   = max.toFixed(1) + ' cm';
-}
-
-function toggleChipFilter(type) {
-  activeTypeFilter = activeTypeFilter === type ? null : type;
-  renderJumpList();
+  if (filtered.length) {
+    const avg = filtered.reduce((s, j) => s + j.height, 0) / filtered.length;
+    const max = Math.max(...filtered.map(j => j.height));
+    document.getElementById('results-sum-count').textContent = filtered.length;
+    document.getElementById('results-sum-avg').textContent   = avg.toFixed(1) + ' cm';
+    document.getElementById('results-sum-max').textContent   = max.toFixed(1) + ' cm';
+  }
 }
 
 function copyJumpsToClipboard() {
@@ -1396,6 +1397,14 @@ function deleteJump(idx) {
   jumps.splice(idx, 1);
   broadcastJumps();
   renderJumpList();
+  if (currentView === 'results') {
+    const remaining = jumps.filter(j => j.type === activeTypeFilter);
+    if (remaining.length === 0) {
+      history.back();
+    } else {
+      renderResultsView();
+    }
+  }
 }
 
 // ─── Broadcast ─────────────────────────────────────────────────
