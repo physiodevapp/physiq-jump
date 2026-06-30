@@ -134,7 +134,7 @@
       border-radius: 12px; overflow: hidden;
     }
     .summary-header {
-      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
     }
     .summary-title {
@@ -578,7 +578,7 @@
   <div class="scroll-body">
     <div id="jump-summary-card" class="summary-card" hidden>
       <div class="summary-header">
-        <span class="summary-title">Resumen</span>
+        <span class="summary-title">Resumen global</span>
         <button id="btn-copy-jumps" class="btn-copy" onclick="copyJumpsToClipboard()">📋 Copiar</button>
       </div>
       <div id="jump-type-chips" class="region-chips"></div>
@@ -1371,12 +1371,25 @@ function copyJumpsToClipboard() {
   });
 
   const text = `SALTOS PhysiQ-Jump\nFecha: ${date}\n\n${sections.join('\n\n')}`;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('btn-copy-jumps');
-    const orig = btn.textContent;
-    btn.textContent = '✓ Copiado';
-    setTimeout(() => { btn.textContent = orig; }, 1800);
-  }).catch(() => {});
+  navigator.clipboard.writeText(text).then(() => _showCopyFeedback()).catch(() => {});
+}
+
+function _showCopyFeedback() {
+  document.getElementById('copyFeedback')?.remove();
+  const toast = document.createElement('div');
+  toast.id = 'copyFeedback';
+  toast.style.cssText = [
+    'position:fixed', 'bottom:24px', 'left:50%',
+    'transform:translateX(-50%)',
+    'background:var(--surface)', 'border:1px solid var(--accent)',
+    'color:var(--accent)', 'font-size:.8rem',
+    "font-family:'Outfit',sans-serif", 'padding:10px 20px',
+    'border-radius:8px', 'z-index:9999',
+    'box-shadow:0 4px 16px rgba(0,0,0,.4)',
+  ].join(';');
+  toast.textContent = '✓ Saltos copiados al portapapeles';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 function deleteJump(idx) {
