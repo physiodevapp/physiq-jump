@@ -396,7 +396,7 @@
     }
 
     /* Scrubber */
-    .scrubber-row { display: flex; align-items: center; gap: 7px; }
+    .scrubber-row { display: flex; align-items: center; gap: 7px; padding-top: 13px; }
     .time-lbl {
       font-family: 'DM Mono', monospace; font-size: 0.65rem;
       color: var(--text3); white-space: nowrap; min-width: 30px;
@@ -450,11 +450,16 @@
       border-right: 7px solid transparent;
       border-top: 11px solid currentColor;
       pointer-events: all; cursor: pointer;
-      filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.3));
-      opacity: 0.9;
+      /* dark outline so it doesn't blend with the video frame border */
+      filter:
+        drop-shadow(-1px 0   0 rgba(0,0,0,0.85))
+        drop-shadow( 1px 0   0 rgba(0,0,0,0.85))
+        drop-shadow(0  -1px  0 rgba(0,0,0,0.85))
+        drop-shadow(0   1px  0 rgba(0,0,0,0.85));
+      opacity: 0.95;
     }
     .scrubber-marker-head:hover  { opacity: 1; }
-    .scrubber-marker-head:active { opacity: 0.7; }
+    .scrubber-marker-head:active { opacity: 0.75; }
     .scrubber-marker-head.takeoff { color: var(--green); }
     .scrubber-marker-head.landing { color: var(--accent); }
 
