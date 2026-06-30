@@ -63,8 +63,9 @@
     .in-hub .logo-main { cursor: pointer; transition: opacity 0.15s; }
     .in-hub .logo-main::before { content: '‹'; display: inline-block; margin-right: 8px; opacity: 0.55; animation: hub-back-hint 0.7s ease-out 0.5s 1 both; }
     .in-hub .logo-main:hover { opacity: 0.75; }
-    @media (max-width: 768px) { .logo-main, .logo-sub { font-size: 1.2rem; } }
-    @media (max-width: 480px) { .logo-main, .logo-sub { font-size: 1.1rem; } }
+    @media (max-width: 768px) { .app-header { height: 52px; } .logo-main, .logo-sub { font-size: 1.2rem; } }
+    @media (max-width: 480px) { .app-header { height: 48px; } .logo-main, .logo-sub { font-size: 1.1rem; } }
+    @media (max-height: 500px) and (max-width: 900px) { .app-header { height: 44px; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
 
     .btn-icon {
@@ -91,6 +92,7 @@
       flex: 1; overflow-y: auto;
       padding: 16px 16px calc(var(--safe-b) + 16px);
       display: flex; flex-direction: column; gap: 12px;
+      max-width: 640px; margin: 0 auto; width: 100%;
     }
 
     .jumps-empty {
@@ -233,6 +235,7 @@
       flex: 1; overflow-y: auto;
       padding: 24px 16px calc(var(--safe-b) + 24px);
       display: flex; flex-direction: column; gap: 10px;
+      max-width: 640px; margin: 0 auto; width: 100%;
     }
 
     .source-card {
@@ -313,6 +316,8 @@
       background: rgba(10,13,18,0.92);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     }
+    @media (max-width: 480px) { .analyzer-header { height: 48px; } }
+    @media (max-height: 500px) and (max-width: 900px) { .analyzer-header { height: 44px; } }
 
     .fps-chip {
       margin-left: auto; flex-shrink: 0;
