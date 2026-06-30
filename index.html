@@ -336,15 +336,15 @@
       background: #000;
       display: flex; align-items: center; justify-content: center;
       position: relative;
+      transition: box-shadow 0.15s ease;
     }
+    .video-wrap.at-takeoff { box-shadow: inset 0 0 0 3px var(--green); }
+    .video-wrap.at-landing { box-shadow: inset 0 0 0 3px var(--accent); }
 
     #main-video {
       width: 100%; height: 100%;
       object-fit: contain; display: block;
-      transition: box-shadow 0.15s ease;
     }
-    #main-video.at-takeoff { box-shadow: inset 0 0 0 3px var(--green); }
-    #main-video.at-landing { box-shadow: inset 0 0 0 3px var(--accent); }
 
     #frame-marker-badge {
       position: absolute; top: 8px; left: 8px;
@@ -422,9 +422,13 @@
     }
     .scrubber-marker {
       position: absolute; top: 0; bottom: 0;
-      width: 3px; border-radius: 1.5px;
+      width: 5px; border-radius: 2.5px;
       transform: translateX(-50%);
       pointer-events: all; cursor: pointer; opacity: 0.85;
+    }
+    .scrubber-marker::before {
+      content: ''; position: absolute;
+      inset: 0 -6px;
     }
     .scrubber-marker:hover { opacity: 1; }
     .scrubber-marker.takeoff { background: var(--green); }
@@ -883,7 +887,8 @@ let videoSrc     = null;
 let selectedType     = 'CMJ';
 let activeTypeFilter = null;
 let stepTimer   = null;
-let isScrubbing = false;
+let isScrubbing     = false;
+let isSeekingToMark = false;
 let cameraStream   = null;
 let mediaRecorder  = null;
 let recChunks      = [];
@@ -1109,7 +1114,7 @@ async function onDataLoaded() {
 }
 
 function onTimeUpdate() {
-  if (isScrubbing) return;
+  if (isScrubbing || isSeekingToMark) return;
   setCurrentTimeDisplay(video.currentTime);
   document.getElementById('scrubber').value = video.currentTime;
 }
@@ -1478,7 +1483,7 @@ function setCurrentTimeDisplay(t) {
 }
 
 function updateFrameMarkerVisual(t) {
-  const vid   = document.getElementById('main-video');
+  const wrap  = document.getElementById('video-wrap');
   const badge = document.getElementById('frame-marker-badge');
   const label = document.getElementById('frame-marker-badge-label');
   const fd    = isFinite(fps) && fps > 0 ? 1 / fps / 2 : 0.008;
@@ -1486,8 +1491,8 @@ function updateFrameMarkerVisual(t) {
   const atTakeoff = marks.takeoff !== null && Math.abs(t - marks.takeoff) < fd;
   const atLanding = marks.landing !== null && Math.abs(t - marks.landing) < fd;
 
-  vid.classList.toggle('at-takeoff', atTakeoff);
-  vid.classList.toggle('at-landing', atLanding && !atTakeoff);
+  wrap.classList.toggle('at-takeoff', atTakeoff);
+  wrap.classList.toggle('at-landing', atLanding && !atTakeoff);
   badge.classList.toggle('at-takeoff', atTakeoff);
   badge.classList.toggle('at-landing', atLanding && !atTakeoff);
 
@@ -1500,9 +1505,11 @@ function fmtSec(s) { return (isFinite(s) ? s : 0).toFixed(3); }
 function seekToMark(which) {
   const t = marks[which];
   if (t === null) return;
+  isSeekingToMark = true;
   video.currentTime = t;
   setCurrentTimeDisplay(t);
   document.getElementById('scrubber').value = t;
+  video.addEventListener('seeked', () => { isSeekingToMark = false; }, { once: true });
 }
 
 // ─── Init ──────────────────────────────────────────────────────
