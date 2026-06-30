@@ -793,7 +793,7 @@
     <button class="btn-icon" onclick="closeAnalyzer()" aria-label="Volver">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
-    <span style="font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:500;color:var(--text1);">Analizando</span>
+    <span id="analyzer-title" style="font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:500;color:var(--text1);">Analizando</span>
     <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()">
       <span id="fps-chip-txt">— fps</span>
     </button>
@@ -958,11 +958,12 @@
 <script>
 // ─── State ────────────────────────────────────────────────────
 const G = 9.81;
-let jumps        = [];
-let fps          = 60;
-let fpsDetected  = false;
-let marks        = { takeoff: null, landing: null };
-let videoSrc     = null;
+let jumps          = [];
+let videoJumpCount = 0;
+let fps            = 60;
+let fpsDetected    = false;
+let marks          = { takeoff: null, landing: null };
+let videoSrc       = null;
 let selectedType     = 'CMJ';
 let activeTypeFilter = null;
 let stepTimer   = null;
@@ -1139,11 +1140,12 @@ const video = document.getElementById('main-video');
 
 function openAnalyzer(src) {
   if (videoSrc) URL.revokeObjectURL(videoSrc);
-  videoSrc = src;
-  marks    = { takeoff: null, landing: null };
-  fps      = 60;
-  fpsDetected = false;
-  isScrubbing = false;
+  videoSrc       = src;
+  marks          = { takeoff: null, landing: null };
+  videoJumpCount = 0;
+  fps            = 60;
+  fpsDetected    = false;
+  isScrubbing    = false;
 
   video.src = src;
   video.load();
@@ -1155,6 +1157,7 @@ function openAnalyzer(src) {
   updateFPSChip();
   syncMarkUI();
   syncResultPanel();
+  _syncAnalyzerHeader();
 
   // Replace the current history entry (source or camera) so that
   // swipe-back from the analyzer skips back to the view before source.
@@ -1426,6 +1429,7 @@ function saveJump() {
   if (!marks.takeoff || !marks.landing) return;
   const t = marks.landing - marks.takeoff;
   const h = parseFloat(((G * t * t) / 8 * 100).toFixed(1));
+  videoJumpCount++;
   jumps.push({
     id:         Date.now(),
     type:       document.getElementById('sel-type').value,
@@ -1436,7 +1440,43 @@ function saveJump() {
   });
   broadcastJumps();
   renderJumpList();
-  closeAnalyzer();
+
+  marks = { takeoff: null, landing: null };
+  syncMarkUI();
+  syncResultPanel();
+  updateScrubberMarkers();
+  _syncAnalyzerHeader();
+  _showJumpSavedToast(videoJumpCount, h);
+  navigator.vibrate?.([30, 50, 30]);
+}
+
+function _syncAnalyzerHeader() {
+  const el = document.getElementById('analyzer-title');
+  if (!el) return;
+  if (videoJumpCount === 0) {
+    el.textContent = 'Analizando';
+  } else {
+    el.textContent = videoJumpCount === 1 ? '1 salto guardado' : `${videoJumpCount} saltos guardados`;
+  }
+}
+
+function _showJumpSavedToast(n, h) {
+  document.getElementById('jumpSavedToast')?.remove();
+  const toast = document.createElement('div');
+  toast.id = 'jumpSavedToast';
+  toast.style.cssText = [
+    'position:fixed', 'bottom:24px', 'left:50%',
+    'transform:translateX(-50%)',
+    'background:var(--surface)', 'border:1px solid var(--green)',
+    'color:var(--green)', 'font-size:.8rem',
+    "font-family:'Outfit',sans-serif", 'padding:10px 20px',
+    'border-radius:8px', 'z-index:9999',
+    'box-shadow:0 4px 16px rgba(0,0,0,.4)',
+    'white-space:nowrap',
+  ].join(';');
+  toast.textContent = `✓ Salto #${n} — ${h.toFixed(1)} cm`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
 }
 
 // ─── Jump list ─────────────────────────────────────────────────
