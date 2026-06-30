@@ -341,10 +341,16 @@
     #main-video {
       width: 100%; height: 100%;
       object-fit: contain; display: block;
-      transition: box-shadow 0.15s ease;
     }
-    #main-video.at-takeoff { box-shadow: inset 0 0 0 3px var(--green); }
-    #main-video.at-landing { box-shadow: inset 0 0 0 3px var(--accent); }
+    .video-wrap::after {
+      content: ''; pointer-events: none;
+      position: absolute; inset: 0; border-radius: 0;
+      border: 3px solid transparent;
+      transition: border-color 0.15s ease;
+      z-index: 5;
+    }
+    .video-wrap.at-takeoff::after { border-color: var(--green); }
+    .video-wrap.at-landing::after  { border-color: var(--accent); }
 
     #frame-marker-badge {
       position: absolute; top: 8px; left: 8px;
@@ -415,34 +421,42 @@
       width: 18px; height: 18px; border-radius: 50%;
       background: var(--text1); border: none; cursor: pointer;
     }
+    /* bars layer — behind the scrubber thumb */
     #scrubber-markers {
       position: absolute; left: 9px; right: 9px;
       top: 50%; transform: translateY(-50%);
-      height: 18px; pointer-events: none; z-index: 2;
-      overflow: visible;
+      height: 18px; pointer-events: none; z-index: 0;
     }
     .scrubber-marker {
       position: absolute; top: 0; bottom: 0;
       width: 3px; border-radius: 0 0 1.5px 1.5px;
       transform: translateX(-50%);
-      pointer-events: all; cursor: pointer; opacity: 0.9;
-      /* triangle head protruding above the track */
+      opacity: 0.75;
     }
-    .scrubber-marker::before {
-      content: '';
-      position: absolute;
-      bottom: 100%;
-      left: 50%; transform: translateX(-50%);
+    .scrubber-marker.takeoff { background: var(--green); }
+    .scrubber-marker.landing { background: var(--accent); }
+    /* triangle heads layer — in front of the scrubber thumb */
+    #scrubber-marker-heads {
+      position: absolute; left: 9px; right: 9px;
+      top: 50%; transform: translateY(-50%);
+      height: 18px; pointer-events: none; z-index: 2;
+      overflow: visible;
+    }
+    .scrubber-marker-head {
+      position: absolute; bottom: 100%;
+      transform: translateX(-50%);
       width: 0; height: 0;
       border-left: 7px solid transparent;
       border-right: 7px solid transparent;
-      border-top: 10px solid currentColor;
-      filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.35));
+      border-top: 11px solid currentColor;
+      pointer-events: all; cursor: pointer;
+      filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.3));
+      opacity: 0.9;
     }
-    .scrubber-marker:hover { opacity: 1; transform: translateX(-50%) scaleY(1.06); }
-    .scrubber-marker:active { transform: translateX(-50%) scaleY(0.97); }
-    .scrubber-marker.takeoff { background: var(--green); color: var(--green); }
-    .scrubber-marker.landing { background: var(--accent); color: var(--accent); }
+    .scrubber-marker-head:hover  { opacity: 1; }
+    .scrubber-marker-head:active { opacity: 0.7; }
+    .scrubber-marker-head.takeoff { color: var(--green); }
+    .scrubber-marker-head.landing { color: var(--accent); }
 
     /* Playback row */
     .playback-row {
@@ -750,6 +764,7 @@
           oninput="onScrubInput(this.value)"
           onchange="onScrubEnd()">
         <div id="scrubber-markers"></div>
+        <div id="scrubber-marker-heads"></div>
       </div>
       <span class="time-lbl r" id="lbl-dur">0.000</span>
     </div>
@@ -1068,6 +1083,7 @@ function openAnalyzer(src) {
 
   document.getElementById('sel-type').value = selectedType;
   document.getElementById('scrubber-markers').innerHTML = '';
+  document.getElementById('scrubber-marker-heads').innerHTML = '';
 
   updateFPSChip();
   syncMarkUI();
@@ -1312,20 +1328,29 @@ function syncResultPanel() {
 }
 
 function updateScrubberMarkers() {
-  const container = document.getElementById('scrubber-markers');
-  const dur = video.duration;
-  if (!container || !isFinite(dur) || dur === 0) return;
-  container.innerHTML = '';
+  const bars  = document.getElementById('scrubber-markers');
+  const heads = document.getElementById('scrubber-marker-heads');
+  const dur   = video.duration;
+  if (!bars || !heads || !isFinite(dur) || dur === 0) return;
+  bars.innerHTML  = '';
+  heads.innerHTML = '';
   [['takeoff', 'takeoff'], ['landing', 'landing']].forEach(([which, cls]) => {
     const t = marks[which];
     if (t === null) return;
-    const pct = (t / dur) * 100;
-    const el = document.createElement('div');
-    el.className = 'scrubber-marker ' + cls;
-    el.style.left = pct + '%';
-    el.title = which === 'takeoff' ? 'Ir a despegue' : 'Ir a aterrizaje';
-    el.addEventListener('click', () => seekToMark(which));
-    container.appendChild(el);
+    const pct   = (t / dur) * 100;
+    const title = which === 'takeoff' ? 'Ir a despegue' : 'Ir a aterrizaje';
+
+    const bar = document.createElement('div');
+    bar.className  = 'scrubber-marker ' + cls;
+    bar.style.left = pct + '%';
+    bars.appendChild(bar);
+
+    const head = document.createElement('div');
+    head.className  = 'scrubber-marker-head ' + cls;
+    head.style.left = pct + '%';
+    head.title      = title;
+    head.addEventListener('click', () => seekToMark(which));
+    heads.appendChild(head);
   });
 }
 
@@ -1500,8 +1525,9 @@ function updateFrameMarkerVisual(t) {
   const atTakeoff = marks.takeoff !== null && Math.abs(t - marks.takeoff) < fd;
   const atLanding = marks.landing !== null && Math.abs(t - marks.landing) < fd;
 
-  vid.classList.toggle('at-takeoff', atTakeoff);
-  vid.classList.toggle('at-landing', atLanding && !atTakeoff);
+  const wrap = document.getElementById('video-wrap');
+  wrap.classList.toggle('at-takeoff', atTakeoff);
+  wrap.classList.toggle('at-landing', atLanding && !atTakeoff);
   badge.classList.toggle('at-takeoff', atTakeoff);
   badge.classList.toggle('at-landing', atLanding && !atTakeoff);
 
