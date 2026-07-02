@@ -101,14 +101,18 @@
 
     /* Translate banner (mobile tap feedback) */
     .translate-banner {
+      position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 50;
       display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; padding: 0 1rem;
-      max-height: 0; overflow: hidden;
+      gap: 8px; padding: 7px 1rem;
       background: var(--surface); border-bottom: 1px solid var(--border);
       font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text2);
-      transition: max-height 0.28s ease, padding 0.28s ease;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-100%);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
-    .translate-banner.visible { max-height: 60px; padding: 7px 1rem; }
+    .translate-banner.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    @media (min-width: 769px) { .translate-banner { display: none; } }
+    .translate-banner.visible ~ #view-home { padding-top: 36px; }
     .translate-banner-close {
       background: none; border: none; color: var(--text3); cursor: pointer;
       font-size: 0.9rem; line-height: 1; flex-shrink: 0; padding: 2px 4px;
