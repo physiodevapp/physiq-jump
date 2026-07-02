@@ -1064,8 +1064,8 @@
         <span id="sel-type-val" class="sel-btn-val">CMJ</span>
         <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
-      <button id="btn-finish" class="btn-finish" onclick="closeAnalyzer()" disabled>Finalizar</button>
       <button id="btn-save" class="btn-save" onclick="saveJump()" disabled>Guardar</button>
+      <button id="btn-finish" class="btn-finish" onclick="closeAnalyzer()" disabled>Finalizar</button>
     </div>
 
   </div>
@@ -1672,6 +1672,7 @@ function openTypePicker() {
     selectedType = val;
     selectedLeg  = legForType(val);
     document.getElementById('sel-type-val').textContent = val;
+    _syncAnalyzerHeader();
   });
 }
 
