@@ -105,11 +105,8 @@
       gap: 8px; padding: 7px 1rem;
       background: var(--surface); border-bottom: 1px solid var(--border);
       font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text2);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s;
     }
-    .translate-banner.visible { opacity: 1; pointer-events: auto; }
-    @media (max-width: 768px) { .translate-banner { display: flex; } }
+    .translate-banner.visible { display: flex; }
     .translate-banner-close {
       background: none; border: none; color: var(--text3); cursor: pointer;
       font-size: 0.9rem; line-height: 1; flex-shrink: 0; padding: 2px 4px;

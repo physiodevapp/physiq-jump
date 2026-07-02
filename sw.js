@@ -1,4 +1,4 @@
-const CACHE_NAME = 'physiq-jump-v7';
+const CACHE_NAME = 'physiq-jump-v8';
 
 const SHELL = [
   '/physiq/jump/',
