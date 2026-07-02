@@ -1244,7 +1244,7 @@ function _updateSubHeader(name) {
   } else {
     if (label) label.textContent = ' Saltos';
     backBtn.firstChild.textContent = '←';
-    backBtn.onclick = name === 'analyzer' ? closeAnalyzer : () => history.back();
+    backBtn.onclick = name === 'analyzer' ? closeAnalyzer : goHome;
   }
 
   if (fpsChip) fpsChip.hidden = name !== 'analyzer';
@@ -1265,6 +1265,15 @@ function navigateTo(name) {
   navDepth++;
   history.pushState({ view: name, depth: navDepth }, '');
   showView(name);
+}
+
+function goHome() {
+  showView('home');
+  if (navDepth > 0) {
+    _popstateLock = true;
+    history.go(-navDepth);
+    navDepth = 0;
+  }
 }
 
 // ─── Back gesture / system back button ────────────────────────
@@ -1913,7 +1922,7 @@ function deleteJump(idx) {
   if (currentView === 'results') {
     const remaining = jumps.filter(j => j.type === activeTypeFilter);
     if (remaining.length === 0) {
-      history.back();
+      goHome();
     } else {
       renderResultsView();
     }
