@@ -26,6 +26,7 @@
       --text2:       #8aa4bc;
       --text3:       #5a6e8a;
       --safe-b:      env(safe-area-inset-bottom, 0px);
+      --header-h:    52px;
     }
 
     html, body {
@@ -44,10 +45,10 @@
       overflow: hidden; min-height: 0;
     }
 
-    /* ── App header ──────────────────────────────────────── */
+    /* ── App header (global, always visible) ─────────────── */
     .app-header {
       display: flex; align-items: center; gap: 10px;
-      height: 52px; flex-shrink: 0;
+      height: var(--header-h); flex-shrink: 0;
       padding: 0 16px;
       border-bottom: 1px solid var(--border);
       background: rgba(10,13,18,0.92);
@@ -63,10 +64,20 @@
     .in-hub .logo-main { cursor: pointer; transition: opacity 0.15s; }
     .in-hub .logo-main::before { content: '‹'; display: inline-block; margin-right: 8px; opacity: 0.55; animation: hub-back-hint 0.7s ease-out 0.5s 1 both; }
     .in-hub .logo-main:hover { opacity: 0.75; }
-    @media (max-width: 768px) { .app-header { height: 52px; } .logo-main, .logo-sub { font-size: 1.2rem; } }
-    @media (max-width: 480px) { .app-header { height: 48px; } .logo-main, .logo-sub { font-size: 1.1rem; } }
-    @media (max-height: 500px) and (max-width: 900px) { .app-header { height: 44px; } }
+    @media (max-width: 768px) { .logo-main, .logo-sub { font-size: 1.2rem; } }
+    @media (max-width: 480px) { :root { --header-h: 48px; } .logo-main, .logo-sub { font-size: 1.1rem; } }
+    @media (max-height: 500px) and (max-width: 900px) { :root { --header-h: 44px; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
+
+    /* ── Sub-header (view-specific: back button + title) ── */
+    .sub-header {
+      display: flex; align-items: center; gap: 10px;
+      height: 44px; flex-shrink: 0;
+      padding: 0 12px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 8px 12px 4px var(--surface2);
+    }
 
     .btn-icon {
       width: 36px; height: 36px; border-radius: 50%;
@@ -309,16 +320,6 @@
     }
 
     /* ── Analyzer view ───────────────────────────────────── */
-    .analyzer-header {
-      display: flex; align-items: center; gap: 10px;
-      height: 52px; flex-shrink: 0; padding: 0 12px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(10,13,18,0.92);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    }
-    @media (max-width: 480px) { .analyzer-header { height: 48px; } }
-    @media (max-height: 500px) and (max-width: 900px) { .analyzer-header { height: 44px; } }
-
     .fps-chip {
       margin-left: auto; flex-shrink: 0;
       padding: 5px 11px; border-radius: 20px;
@@ -707,15 +708,31 @@
 <body>
 
 <!-- ══════════════════════════════════════════════
+     GLOBAL HEADER (always visible)
+═══════════════════════════════════════════════ -->
+<header class="app-header">
+  <div class="logo">
+    <span class="logo-main">Physi<span class="logo-q">Q</span></span>
+    <span class="logo-sub">— <span class="logo-sub-word">Jump</span><span class="logo-sub-initial">J</span></span>
+  </div>
+</header>
+
+<!-- SUB-HEADER (view-specific: back + title + optional fps chip) -->
+<div id="subHeader" class="sub-header" hidden>
+  <button id="subHeaderBack" class="btn-icon" aria-label="Volver">
+    <svg id="subHeaderChevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    <svg id="subHeaderClose" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" hidden><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <span id="subHeaderTitle" class="header-title"></span>
+  <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()" hidden>
+    <span id="fps-chip-txt">— fps</span>
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════
      HOME VIEW
 ═══════════════════════════════════════════════ -->
 <div id="view-home" class="view">
-  <div class="app-header">
-    <div class="logo">
-      <span class="logo-main">Physi<span class="logo-q">Q</span></span>
-      <span class="logo-sub">— <span class="logo-sub-word">Jump</span><span class="logo-sub-initial">J</span></span>
-    </div>
-  </div>
   <div class="scroll-body">
     <div id="jump-summary-card" class="summary-card" hidden>
       <div class="summary-header">
@@ -755,12 +772,6 @@
      SOURCE SELECTOR
 ═══════════════════════════════════════════════ -->
 <div id="view-source" class="view" hidden>
-  <div class="app-header">
-    <button class="btn-icon" onclick="history.back()" aria-label="Volver">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <span class="header-title">Nuevo salto</span>
-  </div>
   <div class="scroll-body">
     <button class="source-card" onclick="openFilePicker()">
       <div class="source-icon">
@@ -790,12 +801,6 @@
      CAMERA VIEW
 ═══════════════════════════════════════════════ -->
 <div id="view-camera" class="view" hidden>
-  <div class="app-header">
-    <button class="btn-icon" onclick="cancelCamera()" aria-label="Cancelar">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <span class="header-title">Grabar</span>
-  </div>
   <div class="cam-body">
     <video id="cam-preview" playsinline muted></video>
     <div id="rec-badge" class="rec-badge" hidden>
@@ -814,16 +819,6 @@
      ANALYZER VIEW
 ═══════════════════════════════════════════════ -->
 <div id="view-analyzer" class="view" hidden>
-  <div class="analyzer-header">
-    <button class="btn-icon" onclick="closeAnalyzer()" aria-label="Volver">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <span id="analyzer-title" style="font-family:'Outfit',sans-serif;font-size:0.92rem;font-weight:500;color:var(--text1);">Analizando</span>
-    <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()">
-      <span id="fps-chip-txt">— fps</span>
-    </button>
-  </div>
-
   <div class="video-wrap" id="video-wrap">
     <video id="main-video" playsinline webkit-playsinline preload="auto"></video>
     <div id="frame-marker-badge">
@@ -928,12 +923,6 @@
      RESULTS VIEW
 ═══════════════════════════════════════════════ -->
 <div id="view-results" class="view" hidden>
-  <div class="app-header">
-    <button class="btn-icon" onclick="history.back()" aria-label="Volver">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <span class="header-title" id="results-title">Resultados</span>
-  </div>
   <div class="scroll-body">
     <div id="results-jump-list" class="jump-list"></div>
     <div class="summary-bar">
@@ -1020,6 +1009,33 @@ function showView(name) {
     if (show) el.style.display = 'flex'; else el.style.display = '';
   });
   currentView = name;
+  _updateSubHeader(name);
+}
+
+function _updateSubHeader(name) {
+  const subHeader = document.getElementById('subHeader');
+  const backBtn   = document.getElementById('subHeaderBack');
+  const titleEl   = document.getElementById('subHeaderTitle');
+  const chevron   = document.getElementById('subHeaderChevron');
+  const closeIcon = document.getElementById('subHeaderClose');
+  const fpsChip   = document.getElementById('fps-chip');
+
+  if (name === 'home') {
+    subHeader.hidden = true;
+    return;
+  }
+
+  subHeader.hidden = false;
+
+  const isClose = name === 'camera';
+  if (chevron)   chevron.hidden   =  isClose;
+  if (closeIcon) closeIcon.hidden = !isClose;
+  if (fpsChip)   fpsChip.hidden   = name !== 'analyzer';
+
+  if (name === 'source')   { backBtn.onclick = () => history.back(); titleEl.textContent = 'Nuevo salto'; }
+  if (name === 'camera')   { backBtn.onclick = cancelCamera;         titleEl.textContent = 'Grabar'; }
+  if (name === 'analyzer') { backBtn.onclick = closeAnalyzer;        _syncAnalyzerHeader(); }
+  if (name === 'results')  { backBtn.onclick = () => history.back(); titleEl.textContent = activeTypeFilter || 'Resultados'; }
 }
 
 function navigateTo(name) {
@@ -1537,7 +1553,7 @@ function saveJump() {
 }
 
 function _syncAnalyzerHeader() {
-  const title  = document.getElementById('analyzer-title');
+  const title  = document.getElementById('subHeaderTitle');
   const finish = document.getElementById('btn-finish');
   if (!title) return;
   if (videoJumpCount === 0) {
@@ -1591,9 +1607,9 @@ function renderJumpList() {
 
 function openResultsView(type) {
   activeTypeFilter = type;
-  document.getElementById('results-title').textContent = type;
   renderResultsView();
   navigateTo('results');
+  document.getElementById('subHeaderTitle').textContent = type;
 }
 
 function renderResultsView() {
