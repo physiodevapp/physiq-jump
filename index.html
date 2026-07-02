@@ -724,13 +724,15 @@
 
     /* ── Finalizar button ────────────────────────────────── */
     .btn-finish {
-      width: 100%; padding: 12px; border-radius: 10px; margin-top: 6px;
+      padding: 9px 16px; border-radius: 8px;
       border: 1px solid var(--green); background: transparent;
       color: var(--green); font-family: 'Outfit', sans-serif;
-      font-size: 0.9rem; font-weight: 500; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
       transition: background 0.15s; -webkit-tap-highlight-color: transparent;
     }
-    .btn-finish:hover { background: var(--green-dim); }
+    .btn-finish:hover:not(:disabled) { background: var(--green-dim); }
+    .btn-finish:disabled { opacity: 0.25; cursor: not-allowed; }
 
     .btn-save {
       padding: 9px 16px; border-radius: 8px; border: none;
@@ -1062,13 +1064,9 @@
         <span id="sel-type-val" class="sel-btn-val">CMJ</span>
         <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
-      <button id="sel-leg-btn" class="sel-btn" onclick="openLegPicker()" aria-label="Pierna">
-        <span id="sel-leg-val" class="sel-btn-val">Ambas</span>
-        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </button>
+      <button id="btn-finish" class="btn-finish" onclick="closeAnalyzer()" disabled>Finalizar</button>
       <button id="btn-save" class="btn-save" onclick="saveJump()" disabled>Guardar</button>
     </div>
-    <button id="btn-finish" class="btn-finish" onclick="closeAnalyzer()" hidden>Finalizar análisis</button>
 
   </div>
 </div>
@@ -1314,6 +1312,7 @@ window.addEventListener('popstate', e => {
 
 function selectJumpType(type) {
   selectedType = type;
+  selectedLeg  = legForType(type);
   navigateTo('source');
 }
 
@@ -1441,9 +1440,8 @@ function openAnalyzer(src) {
   video.src = src;
   video.load();
 
-  selectedLeg = 'both';
+  selectedLeg = legForType(selectedType);
   document.getElementById('sel-type-val').textContent = selectedType;
-  document.getElementById('sel-leg-val').textContent  = 'Ambas';
   document.getElementById('scrubber-markers').innerHTML = '';
   document.getElementById('scrubber-marker-heads').innerHTML = '';
 
@@ -1663,17 +1661,17 @@ function onPickerOverlayClick(e) {
   if (e.target === e.currentTarget) document.getElementById('picker-overlay').classList.remove('open');
 }
 
+function legForType(type) {
+  if (type === 'Mono-D') return 'right';
+  if (type === 'Mono-I') return 'left';
+  return 'both';
+}
+
 function openTypePicker() {
   openPicker('Tipo de salto', TYPE_OPTIONS, selectedType, val => {
     selectedType = val;
+    selectedLeg  = legForType(val);
     document.getElementById('sel-type-val').textContent = val;
-  });
-}
-
-function openLegPicker() {
-  openPicker('Pierna', LEG_OPTIONS, selectedLeg, val => {
-    selectedLeg = val;
-    document.getElementById('sel-leg-val').textContent = LEG_OPTIONS.find(o => o.value === val).label;
   });
 }
 
@@ -1805,7 +1803,7 @@ function _syncAnalyzerHeader() {
     badge.hidden       = false;
     textEl.textContent = type + count;
   }
-  if (finish) finish.hidden = videoJumpCount === 0;
+  if (finish) finish.disabled = videoJumpCount === 0;
 }
 
 function _showJumpSavedToast(n, h) {
