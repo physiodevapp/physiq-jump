@@ -85,15 +85,9 @@
       position: relative; background: transparent; border: none;
       color: var(--text2); font-size: 1rem; cursor: pointer;
       padding: 4px 6px; border-radius: 6px; transition: color 0.2s;
-      line-height: 1; display: flex; align-items: center; gap: 4px;
+      line-height: 1;
     }
     .btn-translate:hover { color: var(--text1); }
-    .translate-label {
-      font-size: 0.7rem; font-family: 'DM Mono', monospace; opacity: 0.6;
-      display: inline-block;
-      animation: hub-back-hint 0.7s ease-out 1.5s 1 both;
-    }
-    @media (max-width: 768px) { .translate-label { display: none; } }
     .translate-tooltip {
       position: absolute; top: calc(100% + 8px); right: 0;
       background: var(--surface); border: 1px solid var(--border);
@@ -107,12 +101,14 @@
 
     /* Translate banner (mobile tap feedback) */
     .translate-banner {
-      display: none; align-items: center; justify-content: space-between;
-      gap: 8px; padding: 7px 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 0 1rem;
+      max-height: 0; overflow: hidden;
       background: var(--surface); border-bottom: 1px solid var(--border);
       font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text2);
+      transition: max-height 0.28s ease, padding 0.28s ease;
     }
-    .translate-banner.visible { display: flex; }
+    .translate-banner.visible { max-height: 60px; padding: 7px 1rem; }
     .translate-banner-close {
       background: none; border: none; color: var(--text3); cursor: pointer;
       font-size: 0.9rem; line-height: 1; flex-shrink: 0; padding: 2px 4px;
@@ -861,7 +857,7 @@
     <button id="sessionBtn" class="session-btn" onclick="toggleSessionPanel()" aria-label="Sesión" title="Sesión">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </button>
-    <button class="btn-translate" onclick="handleTranslateClick()" aria-label="View in English">🌐<span class="translate-label">Translate</span><span class="translate-tooltip">Long-press or right-click → Translate to English</span></button>
+    <button class="btn-translate" onclick="handleTranslateClick()" aria-label="View in English">🌐<span class="translate-tooltip">Long-press or right-click → Translate to English</span></button>
   </div>
 </header>
 
