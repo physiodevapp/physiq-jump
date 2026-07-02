@@ -92,9 +92,14 @@
       border: 1px solid rgba(244,63,94,0.3);
       background: rgba(244,63,94,0.08);
       padding: 5px 10px; border-radius: 6px;
-      margin-left: auto; max-width: 60%;
+      margin-left: auto; min-width: 0; max-width: 55%;
       display: flex; align-items: center; gap: 5px;
-      white-space: nowrap; overflow: hidden;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .jump-type-badge-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    /* On very small screens shorten "← Saltos" to just "←" */
+    @media (max-width: 360px) {
+      .btn-back-sub-label { display: none; }
     }
 
     .btn-icon {
@@ -737,8 +742,8 @@
 
 <!-- SUB-HEADER (view-specific: back chip + type badge + optional fps chip) -->
 <div id="subHeader" class="sub-header" hidden>
-  <button id="subHeaderBack" class="btn-back-sub" aria-label="Volver">← Saltos</button>
-  <span id="subHeaderBadge" class="jump-type-badge" hidden></span>
+  <button id="subHeaderBack" class="btn-back-sub" aria-label="Volver">←<span class="btn-back-sub-label"> Saltos</span></button>
+  <span id="subHeaderBadge" class="jump-type-badge" hidden><span id="subHeaderBadgeDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span><span id="subHeaderBadgeText" class="jump-type-badge-text"></span></span>
   <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()" hidden>
     <span id="fps-chip-txt">— fps</span>
   </button>
@@ -1040,21 +1045,25 @@ function _updateSubHeader(name) {
 
   subHeader.hidden = false;
 
+  const label = backBtn.querySelector('.btn-back-sub-label');
   if (name === 'camera') {
-    backBtn.textContent = '✕ Cancelar';
-    backBtn.onclick     = cancelCamera;
+    if (label) label.textContent = ' Cancelar';
+    backBtn.firstChild.textContent = '✕';
+    backBtn.onclick = cancelCamera;
   } else {
-    backBtn.textContent = '← Saltos';
-    backBtn.onclick     = name === 'analyzer' ? closeAnalyzer : () => history.back();
+    if (label) label.textContent = ' Saltos';
+    backBtn.firstChild.textContent = '←';
+    backBtn.onclick = name === 'analyzer' ? closeAnalyzer : () => history.back();
   }
 
   if (fpsChip) fpsChip.hidden = name !== 'analyzer';
 
   if (badge) {
     const type = activeTypeFilter || selectedType;
-    if (type) {
-      badge.hidden = false;
-      badge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span>${type}`;
+    const textEl = document.getElementById('subHeaderBadgeText');
+    if (type && textEl) {
+      badge.hidden  = false;
+      textEl.textContent = type;
     } else {
       badge.hidden = true;
     }
@@ -1577,15 +1586,15 @@ function saveJump() {
 
 function _syncAnalyzerHeader() {
   const badge  = document.getElementById('subHeaderBadge');
+  const textEl = document.getElementById('subHeaderBadgeText');
   const finish = document.getElementById('btn-finish');
-  if (badge) {
-    const dot  = `<span style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span>`;
-    const type = selectedType || '';
+  if (badge && textEl) {
+    const type  = selectedType || '';
     const count = videoJumpCount > 0
       ? ` · ${videoJumpCount === 1 ? '1 guardado' : `${videoJumpCount} guardados`}`
       : '';
-    badge.hidden  = false;
-    badge.innerHTML = dot + type + count;
+    badge.hidden       = false;
+    textEl.textContent = type + count;
   }
   if (finish) finish.hidden = videoJumpCount === 0;
 }
