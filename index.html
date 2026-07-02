@@ -69,6 +69,122 @@
     @media (max-height: 500px) and (max-width: 900px) { :root { --header-h: 44px; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
 
+    /* ── Header right ──────────────────────────────────────── */
+    .header-right { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+
+    .session-btn {
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer;
+      color: var(--text2); padding: 6px; flex-shrink: 0;
+      transition: color 0.15s; border-radius: 6px;
+    }
+    .session-btn:hover { color: var(--text1); }
+    .session-btn.active { color: var(--accent); }
+
+    .btn-translate {
+      position: relative; background: transparent; border: none;
+      color: var(--text2); font-size: 1rem; cursor: pointer;
+      padding: 4px 6px; border-radius: 6px; transition: color 0.2s;
+      line-height: 1;
+    }
+    .btn-translate:hover { color: var(--text1); }
+    .translate-tooltip {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text2); font-size: 0.68rem;
+      font-family: 'DM Mono', monospace; white-space: nowrap;
+      padding: 5px 10px; border-radius: 6px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 200;
+    }
+    .btn-translate:hover .translate-tooltip { opacity: 1; }
+    @media (max-width: 768px) { .btn-translate .translate-tooltip { display: none; } }
+
+    /* Translate banner (mobile tap feedback) */
+    .translate-banner {
+      display: none; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 7px 1rem;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text2);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .translate-banner.visible { opacity: 1; pointer-events: auto; }
+    @media (max-width: 768px) { .translate-banner { display: flex; } }
+    .translate-banner-close {
+      background: none; border: none; color: var(--text3); cursor: pointer;
+      font-size: 0.9rem; line-height: 1; flex-shrink: 0; padding: 2px 4px;
+    }
+
+    /* ── Session panel ─────────────────────────────────────── */
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .session-panel-overlay {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .session-panel-overlay.open { display: flex; animation: fadeUp 0.2s ease; }
+    .session-panel {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 1.8rem;
+      max-width: 420px; width: 90%;
+    }
+    .session-panel-handle {
+      display: none; width: 36px; height: 4px; background: var(--border2);
+      border-radius: 2px; margin: 0 auto 14px; touch-action: none;
+    }
+    .session-panel-title {
+      font-family: 'DM Mono', monospace; font-size: 0.68rem;
+      color: var(--text3); text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .session-panel.has-session .session-panel-title { color: var(--accent); }
+    .patient-name-field { display: flex; flex-direction: column; gap: 6px; }
+    .patient-name-label {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+      color: var(--text3); text-transform: uppercase;
+    }
+    .patient-name-input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text1); border-radius: 8px; padding: 9px 12px;
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      outline: none; transition: border-color 0.2s; width: 100%;
+    }
+    .patient-name-input:focus { border-color: var(--accent); }
+    .session-panel-clear {
+      display: none; background: none; border: 1px solid #ef4444;
+      border-radius: 8px; padding: 8px; cursor: pointer; color: #ef4444;
+      flex-shrink: 0; align-items: center; justify-content: center;
+      align-self: stretch; transition: opacity 0.2s;
+    }
+    .session-panel.has-session .session-panel-clear { display: flex; }
+    .session-panel-clear:hover { opacity: 0.7; }
+    .confirm-box-text { font-size: 0.83rem; color: var(--text2); line-height: 1.5; }
+    .confirm-box-btns { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .confirm-btn-cancel {
+      display: inline-flex; align-items: center; background: transparent;
+      border: 1px solid var(--border); color: var(--text3);
+      border-radius: 8px; padding: 9px 16px;
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    .confirm-btn-cancel:hover { border-color: var(--text2); color: var(--text2); }
+    .confirm-btn-ok {
+      display: inline-flex; align-items: center;
+      background: var(--accent); border: none; color: #fff;
+      border-radius: 8px; padding: 9px 18px;
+      font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .confirm-btn-ok:hover { opacity: 0.85; }
+    @media (max-width: 768px) {
+      .session-panel-overlay { align-items: flex-end; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+      .session-panel-overlay.open { animation: none; }
+      .session-panel-overlay.open .session-panel { animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1); }
+      .session-panel { max-width: 100%; width: 100%; border-radius: 16px 16px 0 0; border: none; border-top: 1px solid var(--border2); padding: 12px 1.4rem 32px; touch-action: none; }
+      .session-panel-handle { display: block; }
+    }
+
     /* ── Sub-header (view-specific: back chip + type badge) ── */
     .sub-header {
       display: flex; align-items: center; gap: 10px;
@@ -738,7 +854,18 @@
     <span class="logo-main">Physi<span class="logo-q">Q</span></span>
     <span class="logo-sub">— <span class="logo-sub-word">Jump</span><span class="logo-sub-initial">J</span></span>
   </div>
+  <div class="header-right" id="headerRight">
+    <button id="sessionBtn" class="session-btn" onclick="toggleSessionPanel()" aria-label="Sesión" title="Sesión">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+    <button class="btn-translate" onclick="handleTranslateClick()" aria-label="View in English">🌐<span class="translate-tooltip">Long-press or right-click → Translate to English</span></button>
+  </div>
 </header>
+
+<div class="translate-banner" id="translateBanner">
+  <span>Long-press or right-click on the page → Translate to English</span>
+  <button class="translate-banner-close" onclick="hideTranslateBanner()">✕</button>
+</div>
 
 <!-- SUB-HEADER (view-specific: back chip + type badge + optional fps chip) -->
 <div id="subHeader" class="sub-header" hidden>
@@ -997,7 +1124,64 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     SESSION PANEL
+═══════════════════════════════════════════════ -->
+<div class="session-panel-overlay" id="sessionPanelOverlay" onclick="closeSessionPanel()">
+  <div class="session-panel" id="sessionPanel" onclick="event.stopPropagation()"></div>
+</div>
+
 <script>
+// ─── Session IDB helpers (shared physiq schema: DB 'physiq' v3) ──────────────
+const _SESSION_TTL = 24 * 60 * 60 * 1000;
+function _openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('physiq', 3);
+    r.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('session')) db.createObjectStore('session');
+    };
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = e => rej(e.target.error);
+  });
+}
+function readSession() {
+  return _openDB().then(db => new Promise(res => {
+    const tx = db.transaction('session', 'readonly');
+    const get = tx.objectStore('session').get('active');
+    get.onsuccess = () => {
+      const s = get.result;
+      res(s && Date.now() - s.createdAt <= _SESSION_TTL ? s : null);
+    };
+    get.onerror = () => res(null);
+  })).catch(() => null);
+}
+function writeSession(patch) {
+  return _openDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('session', 'readwrite');
+    const store = tx.objectStore('session');
+    const get = store.get('active');
+    get.onsuccess = () => {
+      const now = Date.now(), prev = get.result;
+      const base = prev && (now - prev.createdAt <= _SESSION_TTL) ? prev : null;
+      const next = base
+        ? { ...base, ...patch, updatedAt: now }
+        : { sessionId: now, createdAt: now, updatedAt: now, patient: '', date: '', jump: null, ...patch };
+      store.put(next, 'active');
+      tx.oncomplete = () => res(next);
+      tx.onerror    = () => rej();
+    };
+    get.onerror = () => rej();
+  })).catch(() => null);
+}
+function clearSession() {
+  return _openDB().then(db => new Promise(res => {
+    const tx = db.transaction('session', 'readwrite');
+    tx.objectStore('session').delete('active');
+    tx.oncomplete = () => res(); tx.onerror = () => res();
+  })).catch(() => null);
+}
+
 // ─── State ────────────────────────────────────────────────────
 const G = 9.81;
 let jumps          = [];
@@ -1019,6 +1203,15 @@ let recElapsed     = 0;
 let currentView   = 'home';
 let navDepth      = 0;
 let _popstateLock = false;
+
+// ─── Session state ────────────────────────────────────────────
+let _patient        = '';
+let _sessionDate    = '';
+let _sessionGen     = 0;
+let _sessionCleared = false;
+let _patientDebounce = null;
+let _translateTimer  = null;
+const _sessionCh = new BroadcastChannel('physiq-session');
 
 // ─── View management ──────────────────────────────────────────
 function showView(name) {
@@ -1790,8 +1983,178 @@ function seekToMark(which) {
   document.getElementById('scrubber').value = t;
 }
 
+// ─── Session helpers ───────────────────────────────────────────
+function _todayStr() {
+  return new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function _updateSessionBtn() {
+  const btn = document.getElementById('sessionBtn');
+  if (btn) btn.classList.toggle('active', !!_patient);
+}
+
+function _persistPatient() {
+  _sessionDate = _todayStr();
+  if (_patient) _sessionCh.postMessage({ type: 'SESSION_PATIENT', patient: _patient });
+  if (!_patient) return;
+  const gen = _sessionGen;
+  writeSession({ patient: _patient, date: _sessionDate }).then(s => {
+    if (_sessionGen !== gen) clearSession();
+  });
+}
+
+function _softReset() {
+  _sessionGen++;
+  _sessionCleared = true;
+  jumps = [];
+  _patient = '';
+  _sessionDate = '';
+  renderJumpList();
+  broadcastJumps();
+  _updateSessionBtn();
+}
+
+function _handleBC(e) {
+  const msg = e.data;
+  if (!msg) return;
+  if (msg.type === 'SESSION_PATIENT') {
+    _patient = msg.patient || '';
+    const inp = document.getElementById('patientName');
+    if (inp) inp.value = _patient;
+    _updateSessionBtn();
+    return;
+  }
+  if (msg.type === 'SESSION_CLEAR') {
+    _softReset();
+    clearSession();
+  }
+}
+
+// ─── Session panel ─────────────────────────────────────────────
+function toggleSessionPanel() {
+  const overlay = document.getElementById('sessionPanelOverlay');
+  if (!overlay) return;
+  if (overlay.classList.contains('open')) { closeSessionPanel(); return; }
+  _showSessionState('edit');
+  overlay.classList.add('open');
+}
+
+function _showSessionState(state) {
+  const panel = document.getElementById('sessionPanel');
+  if (!panel) return;
+  const hasSession = !!_patient;
+  const label = hasSession
+    ? `${_patient} · ${_sessionDate || _todayStr()}`
+    : 'Sin sesión activa';
+  panel.classList.toggle('has-session', hasSession);
+
+  if (state === 'edit') {
+    panel.innerHTML = `
+      <div class="session-panel-handle"></div>
+      <div class="session-panel-title">${label}</div>
+      <div class="patient-name-field">
+        <label class="patient-name-label">Paciente</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input class="patient-name-input" type="text" id="patientName"
+                 placeholder="Nombre (opcional)" autocomplete="off" spellcheck="false" style="flex:1;">
+          <button class="session-panel-clear" id="sessionPanelClear" title="Borrar sesión">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h9M5 4V2h3v2M3.5 4l.5 7h5l.5-7"/></svg>
+          </button>
+        </div>
+      </div>`;
+    const input = panel.querySelector('#patientName');
+    input.value = _patient || '';
+    input.addEventListener('input', e => {
+      _patient = e.target.value.trim();
+      _sessionCleared = false;
+      const titleEl = panel.querySelector('.session-panel-title');
+      if (titleEl) titleEl.textContent = _patient
+        ? `${_patient} · ${_sessionDate || _todayStr()}`
+        : 'Sin sesión activa';
+      panel.classList.toggle('has-session', !!_patient);
+      clearTimeout(_patientDebounce);
+      _patientDebounce = setTimeout(_persistPatient, 800);
+      _updateSessionBtn();
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') closeSessionPanel(); });
+    panel.querySelector('#sessionPanelClear').onclick = () => _showSessionState('delete');
+    setTimeout(() => input.focus(), 60);
+    _addPanelSwipe(panel);
+
+  } else if (state === 'delete') {
+    panel.innerHTML = `
+      <div class="session-panel-handle"></div>
+      <div class="session-panel-title">${label}</div>
+      <div class="confirm-box-text" style="margin:12px 0 0;">¿Borrar sesión y empezar de nuevo?</div>
+      <div class="confirm-box-btns" style="margin-top:1rem;">
+        <button class="confirm-btn-cancel" id="spCancelBtn">Cancelar</button>
+        <button class="confirm-btn-ok" id="spOkBtn">Borrar sesión</button>
+      </div>`;
+    panel.querySelector('#spCancelBtn').onclick = () => _showSessionState('edit');
+    panel.querySelector('#spOkBtn').onclick = () => {
+      closeSessionPanel();
+      _softReset();
+      clearSession().then(() => _sessionCh.postMessage({ type: 'SESSION_CLEAR' }));
+    };
+    _addPanelSwipe(panel);
+  }
+}
+
+function _addPanelSwipe(panel) {
+  let startY = 0;
+  panel.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+  panel.addEventListener('touchmove', e => {
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) panel.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  panel.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 60) { panel.style.transition = 'transform 0.2s'; panel.style.transform = 'translateY(110%)';
+      setTimeout(closeSessionPanel, 200);
+    } else { panel.style.transform = ''; }
+  });
+}
+
+function closeSessionPanel() {
+  const overlay = document.getElementById('sessionPanelOverlay');
+  const panel   = document.getElementById('sessionPanel');
+  overlay?.classList.remove('open');
+  if (panel) { panel.style.transition = ''; panel.style.transform = ''; }
+}
+
+function promptClearSession() {
+  _showSessionState('delete');
+  const overlay = document.getElementById('sessionPanelOverlay');
+  if (overlay && !overlay.classList.contains('open')) overlay.classList.add('open');
+}
+
+// ─── Translate ─────────────────────────────────────────────────
+function handleTranslateClick() {
+  if (window.innerWidth > 768) return;
+  const banner = document.getElementById('translateBanner');
+  if (!banner) return;
+  banner.classList.add('visible');
+  clearTimeout(_translateTimer);
+  _translateTimer = setTimeout(hideTranslateBanner, 4000);
+}
+
+function hideTranslateBanner() {
+  clearTimeout(_translateTimer);
+  document.getElementById('translateBanner')?.classList.remove('visible');
+}
+
 // ─── Init ──────────────────────────────────────────────────────
 renderJumpList();
+
+// Restore session from IDB
+readSession().then(session => {
+  if (session) {
+    _patient     = session.patient || '';
+    _sessionDate = session.date    || _todayStr();
+  }
+  _updateSessionBtn();
+  _sessionCh.onmessage = _handleBC;
+});
 
 if (window.self !== window.top) {
   document.body.classList.add('in-hub');
