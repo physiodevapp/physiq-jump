@@ -69,14 +69,32 @@
     @media (max-height: 500px) and (max-width: 900px) { :root { --header-h: 44px; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
 
-    /* ── Sub-header (view-specific: back button + title) ── */
+    /* ── Sub-header (view-specific: back chip + type badge) ── */
     .sub-header {
       display: flex; align-items: center; gap: 10px;
       height: 44px; flex-shrink: 0;
-      padding: 0 12px;
+      padding: 0 1rem;
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
       box-shadow: 0 8px 12px 4px var(--surface2);
+    }
+    .btn-back-sub {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text2); border-radius: 8px; padding: 5px 10px;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-back-sub:hover { border-color: var(--accent); color: var(--text1); }
+    .jump-type-badge {
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      color: var(--accent);
+      border: 1px solid rgba(244,63,94,0.3);
+      background: rgba(244,63,94,0.08);
+      padding: 5px 10px; border-radius: 6px;
+      margin-left: auto; max-width: 60%;
+      display: flex; align-items: center; gap: 5px;
+      white-space: nowrap; overflow: hidden;
     }
 
     .btn-icon {
@@ -321,7 +339,7 @@
 
     /* ── Analyzer view ───────────────────────────────────── */
     .fps-chip {
-      margin-left: auto; flex-shrink: 0;
+      flex-shrink: 0;
       padding: 5px 11px; border-radius: 20px;
       border: 1px solid var(--border2); background: transparent;
       color: var(--text3); font-family: 'DM Mono', monospace; font-size: 0.7rem;
@@ -717,13 +735,10 @@
   </div>
 </header>
 
-<!-- SUB-HEADER (view-specific: back + title + optional fps chip) -->
+<!-- SUB-HEADER (view-specific: back chip + type badge + optional fps chip) -->
 <div id="subHeader" class="sub-header" hidden>
-  <button id="subHeaderBack" class="btn-icon" aria-label="Volver">
-    <svg id="subHeaderChevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    <svg id="subHeaderClose" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" hidden><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-  <span id="subHeaderTitle" class="header-title"></span>
+  <button id="subHeaderBack" class="btn-back-sub" aria-label="Volver">← Saltos</button>
+  <span id="subHeaderBadge" class="jump-type-badge" hidden></span>
   <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()" hidden>
     <span id="fps-chip-txt">— fps</span>
   </button>
@@ -1015,9 +1030,7 @@ function showView(name) {
 function _updateSubHeader(name) {
   const subHeader = document.getElementById('subHeader');
   const backBtn   = document.getElementById('subHeaderBack');
-  const titleEl   = document.getElementById('subHeaderTitle');
-  const chevron   = document.getElementById('subHeaderChevron');
-  const closeIcon = document.getElementById('subHeaderClose');
+  const badge     = document.getElementById('subHeaderBadge');
   const fpsChip   = document.getElementById('fps-chip');
 
   if (name === 'home') {
@@ -1027,15 +1040,25 @@ function _updateSubHeader(name) {
 
   subHeader.hidden = false;
 
-  const isClose = name === 'camera';
-  if (chevron)   chevron.hidden   =  isClose;
-  if (closeIcon) closeIcon.hidden = !isClose;
-  if (fpsChip)   fpsChip.hidden   = name !== 'analyzer';
+  if (name === 'camera') {
+    backBtn.textContent = '✕ Cancelar';
+    backBtn.onclick     = cancelCamera;
+  } else {
+    backBtn.textContent = '← Saltos';
+    backBtn.onclick     = name === 'analyzer' ? closeAnalyzer : () => history.back();
+  }
 
-  if (name === 'source')   { backBtn.onclick = () => history.back(); titleEl.textContent = 'Nuevo salto'; }
-  if (name === 'camera')   { backBtn.onclick = cancelCamera;         titleEl.textContent = 'Grabar'; }
-  if (name === 'analyzer') { backBtn.onclick = closeAnalyzer;        _syncAnalyzerHeader(); }
-  if (name === 'results')  { backBtn.onclick = () => history.back(); titleEl.textContent = activeTypeFilter || 'Resultados'; }
+  if (fpsChip) fpsChip.hidden = name !== 'analyzer';
+
+  if (badge) {
+    const type = activeTypeFilter || selectedType;
+    if (type) {
+      badge.hidden = false;
+      badge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span>${type}`;
+    } else {
+      badge.hidden = true;
+    }
+  }
 }
 
 function navigateTo(name) {
@@ -1553,16 +1576,18 @@ function saveJump() {
 }
 
 function _syncAnalyzerHeader() {
-  const title  = document.getElementById('subHeaderTitle');
+  const badge  = document.getElementById('subHeaderBadge');
   const finish = document.getElementById('btn-finish');
-  if (!title) return;
-  if (videoJumpCount === 0) {
-    title.textContent = 'Analizando';
-    if (finish) finish.hidden = true;
-  } else {
-    title.textContent = videoJumpCount === 1 ? '1 salto guardado' : `${videoJumpCount} saltos guardados`;
-    if (finish) finish.hidden = false;
+  if (badge) {
+    const dot  = `<span style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span>`;
+    const type = selectedType || '';
+    const count = videoJumpCount > 0
+      ? ` · ${videoJumpCount === 1 ? '1 guardado' : `${videoJumpCount} guardados`}`
+      : '';
+    badge.hidden  = false;
+    badge.innerHTML = dot + type + count;
   }
+  if (finish) finish.hidden = videoJumpCount === 0;
 }
 
 function _showJumpSavedToast(n, h) {
@@ -1609,7 +1634,6 @@ function openResultsView(type) {
   activeTypeFilter = type;
   renderResultsView();
   navigateTo('results');
-  document.getElementById('subHeaderTitle').textContent = type;
 }
 
 function renderResultsView() {
