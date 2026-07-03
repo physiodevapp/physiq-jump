@@ -14,33 +14,34 @@ jobs:
     steps:
       - name: Checkout physiq-jump
         uses: actions/checkout@v4
-        with:
-          path: satellite
 
       - name: Checkout physiq hub
         uses: actions/checkout@v4
         with:
           repository: physiodevapp/physiq
           token: ${{ secrets.PHYSIQ_DEPLOY_TOKEN }}
-          path: hub
+          path: physiq-hub
 
-      - name: Copy files to hub/jump/
+      - name: Copy files to hub
         run: |
-          rm -rf hub/jump
-          mkdir -p hub/jump
-          rsync -a --exclude='.git' --exclude='.github' satellite/ hub/jump/
+          rm -rf physiq-hub/jump
+          mkdir -p physiq-hub/jump
+          cp index.html sw.js manifest.json physiq-hub/jump/
+          [ -f favicon.svg ] && cp favicon.svg physiq-hub/jump/ || true
+          [ -f .nojekyll ] && cp .nojekyll physiq-hub/jump/ || true
+          [ -d icons ] && mkdir -p physiq-hub/jump/icons && cp icons/*.png physiq-hub/jump/icons/ || true
+          [ -d lib ] && mkdir -p physiq-hub/jump/lib && cp lib/*.js physiq-hub/jump/lib/ || true
 
       - name: Commit and push
+        working-directory: physiq-hub
         run: |
-          cd hub
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add jump/
-          git diff --cached --quiet && exit 0
-          git commit -m "deploy: update jump satellite"
+          git add -A jump/
+          git diff --cached --quiet || git commit -m "chore: update jump from physiq-jump@${{ github.sha }}"
           for i in 1 2 4 8; do
             git push && break
-            echo "Push rejected, pulling and retrying in ${i}s..."
+            echo "Push rejected, retrying in ${i}s..."
             sleep $i
             git pull --rebase origin main
           done
