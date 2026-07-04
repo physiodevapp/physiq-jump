@@ -743,6 +743,8 @@
     .sel-btn:hover { border-color: var(--border2); }
     .sel-btn-val { flex: 1; text-align: left; }
     .sel-btn svg { flex-shrink: 0; color: var(--text3); }
+    .note-btn { width: 100%; }
+    .sel-btn-val.placeholder { color: var(--text3); }
 
     /* ── Picker options ──────────────────────────────────── */
     .picker-list { display: flex; flex-direction: column; }
@@ -755,6 +757,7 @@
     }
     .picker-opt:hover { background: rgba(255,255,255,0.04); }
     .picker-opt.active { color: var(--green); }
+    .picker-opt-new { color: var(--accent); }
     .picker-check { font-size: 0.8rem; color: var(--green); opacity: 0; flex-shrink: 0; }
     .picker-opt.active .picker-check { opacity: 1; }
 
@@ -1096,7 +1099,12 @@
       </div>
     </div>
 
-    <input id="jump-note-input" class="text-input" type="text" placeholder="Nota (opcional)" autocomplete="off">
+    <button id="jump-note-btn" class="sel-btn note-btn" type="button" onclick="openNotePicker()" aria-label="Nota (opcional)">
+      <span id="jump-note-val" class="sel-btn-val placeholder">Nota (opcional)</span>
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <input id="jump-note-input" class="text-input" type="text" placeholder="Nota (opcional)" autocomplete="off"
+      hidden onkeydown="if(event.key==='Enter') this.blur()" onblur="commitNoteInput()">
 
     <div class="meta-row">
       <button id="sel-type-btn" class="sel-btn" onclick="openTypePicker()" aria-label="Tipo de salto">
@@ -1694,6 +1702,75 @@ function openTypePicker() {
   });
 }
 
+// ─── Note picker (persistent history + free text) ──────────────
+const NOTE_HISTORY_KEY = 'physiq-jump-notes';
+const NOTE_HISTORY_MAX = 30;
+let currentNote = '';
+let _noteHistoryCache = [];
+
+function _escHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function _getNoteHistory() {
+  try { return JSON.parse(localStorage.getItem(NOTE_HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function _addNoteToHistory(note) {
+  if (!note) return;
+  const history = _getNoteHistory().filter(n => n !== note);
+  history.unshift(note);
+  localStorage.setItem(NOTE_HISTORY_KEY, JSON.stringify(history.slice(0, NOTE_HISTORY_MAX)));
+}
+
+function _setCurrentNote(note) {
+  currentNote = note;
+  const val = document.getElementById('jump-note-val');
+  val.textContent = note || 'Nota (opcional)';
+  val.classList.toggle('placeholder', !note);
+}
+
+function openNotePicker() {
+  _noteHistoryCache = _getNoteHistory();
+  document.getElementById('picker-title').textContent = 'Nota';
+  const rows = [`<button class="picker-opt${currentNote ? '' : ' active'}" onclick="selectNoteOpt('')">
+    <span>Sin nota</span><span class="picker-check">✓</span></button>`];
+  _noteHistoryCache.forEach((note, i) => {
+    rows.push(`<button class="picker-opt${note === currentNote ? ' active' : ''}" onclick="selectNoteHistoryOpt(${i})">
+      <span>${_escHtml(note)}</span><span class="picker-check">✓</span></button>`);
+  });
+  rows.push(`<button class="picker-opt picker-opt-new" onclick="openNoteNewValuePrompt()"><span>+ Nuevo valor…</span></button>`);
+  document.getElementById('picker-list').innerHTML = rows.join('');
+  document.getElementById('picker-overlay').classList.add('open');
+}
+
+function selectNoteHistoryOpt(i) {
+  selectNoteOpt(_noteHistoryCache[i] || '');
+}
+
+function selectNoteOpt(note) {
+  _setCurrentNote(note);
+  document.getElementById('picker-overlay').classList.remove('open');
+}
+
+function openNoteNewValuePrompt() {
+  document.getElementById('picker-overlay').classList.remove('open');
+  const input = document.getElementById('jump-note-input');
+  input.value = '';
+  input.hidden = false;
+  document.getElementById('jump-note-btn').hidden = true;
+  input.focus();
+}
+
+function commitNoteInput() {
+  const input = document.getElementById('jump-note-input');
+  const note = input.value.trim();
+  input.hidden = true;
+  document.getElementById('jump-note-btn').hidden = false;
+  if (note) _setCurrentNote(note);
+}
+
 // ─── Marks ────────────────────────────────────────────────────
 function markTakeoff() {
   marks.takeoff = video.currentTime;
@@ -1789,8 +1866,7 @@ function saveJump() {
   if (!marks.takeoff || !marks.landing) return;
   const t = marks.landing - marks.takeoff;
   const h = parseFloat(((G * t * t) / 8 * 100).toFixed(1));
-  const noteInput = document.getElementById('jump-note-input');
-  const note = noteInput?.value.trim() || '';
+  const note = currentNote;
   videoJumpCount++;
   jumps.push({
     id:         Date.now(),
@@ -1801,7 +1877,8 @@ function saveJump() {
     fps,
     ...(note ? { note } : {}),
   });
-  if (noteInput) noteInput.value = '';
+  if (note) _addNoteToHistory(note);
+  _setCurrentNote('');
   broadcastJumps();
   renderJumpList();
   _updateResetBtn();
