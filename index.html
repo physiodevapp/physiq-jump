@@ -124,6 +124,7 @@
     .translate-banner.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     @media (min-width: 769px) { .translate-banner { display: none; } }
     .translate-banner.visible ~ .view { padding-top: 36px; }
+    #subHeader:not([hidden]) ~ .translate-banner { top: calc(var(--header-h) + 44px); }
     .translate-banner-close {
       margin-left: auto;
       background: none; border: none; color: var(--text2); cursor: pointer;
@@ -880,11 +881,6 @@
   </div>
 </header>
 
-<div class="translate-banner" id="translateBanner">
-  🌐 <span>Long-press or right-click → Translate to English</span>
-  <button class="translate-banner-close" onclick="hideTranslateBanner()">✕</button>
-</div>
-
 <!-- SUB-HEADER (view-specific: back chip + type badge + optional fps chip) -->
 <div id="subHeader" class="sub-header" hidden>
   <button id="subHeaderBack" class="btn-back-sub" aria-label="Volver">←<span class="btn-back-sub-label"> Saltos</span></button>
@@ -892,6 +888,11 @@
   <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()" hidden>
     <span id="fps-chip-txt">— fps</span>
   </button>
+</div>
+
+<div class="translate-banner" id="translateBanner">
+  🌐 <span>Long-press or right-click → Translate to English</span>
+  <button class="translate-banner-close" onclick="hideTranslateBanner()">✕</button>
 </div>
 
 <!-- ══════════════════════════════════════════════
