@@ -365,6 +365,14 @@
     .fatigue-value-mid  { color: var(--blue); }
     .fatigue-value-high { color: var(--accent); }
 
+    #results-content { display: flex; flex-direction: column; gap: 12px; }
+    .condition-group { display: flex; flex-direction: column; gap: 8px; }
+    .condition-group-label {
+      font-family: 'DM Mono', monospace; font-size: 0.68rem;
+      color: var(--text2); padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
     .btn-primary {
       width: 100%; padding: 14px 16px;
       border-radius: 12px; border: none;
@@ -1107,36 +1115,7 @@
 ═══════════════════════════════════════════════ -->
 <div id="view-results" class="view" hidden>
   <div class="scroll-body">
-    <div id="results-jump-list" class="jump-list"></div>
-    <div class="summary-bar">
-      <div class="sum-item">
-        <span class="sum-label">Saltos</span>
-        <span class="sum-value" id="results-sum-count">—</span>
-      </div>
-      <div class="sum-item">
-        <span class="sum-label">Media</span>
-        <span class="sum-value" id="results-sum-avg">—</span>
-      </div>
-      <div class="sum-item">
-        <span class="sum-label">Mejor</span>
-        <span class="sum-value" id="results-sum-max">—</span>
-      </div>
-    </div>
-    <div id="fatigue-card" class="fatigue-card" hidden>
-      <div class="fatigue-header">
-        <span class="fatigue-title">Fatiga acumulada</span>
-      </div>
-      <div class="fatigue-metrics">
-        <div class="sum-item">
-          <span class="sum-label">Índice (FI)</span>
-          <span class="sum-value" id="results-fi">—</span>
-        </div>
-        <div class="sum-item">
-          <span class="sum-label">Decremento (S%)</span>
-          <span class="sum-value" id="results-sdec">—</span>
-        </div>
-      </div>
-    </div>
+    <div id="results-content"></div>
     <button class="btn-primary" onclick="sendToReport()">Enviar a informe</button>
   </div>
 </div>
@@ -1899,77 +1878,113 @@ function openResultsView(type) {
 
 function renderResultsView() {
   const filtered = jumps.filter(j => j.type === activeTypeFilter);
-  const list = document.getElementById('results-jump-list');
+  const content  = document.getElementById('results-content');
 
-  list.innerHTML = filtered.map((j, i) => {
-    const realIdx = jumps.indexOf(j);
-    return `
-    <div class="jump-item" style="animation-delay:${i * 0.04}s">
-      <span class="jump-num">${realIdx + 1}</span>
-      <div class="jump-info">
-        <div class="jump-type">${j.type}</div>
-        <div class="jump-meta">${LEG[j.leg] || j.leg} &middot; ${Math.round(j.flightTime * 1000)} ms &middot; ${j.fps} fps</div>
-        ${j.note ? `<div class="jump-note">${j.note}</div>` : ''}
-      </div>
-      <div class="jump-height-wrap">
-        <span class="jump-height">${j.height.toFixed(1)}</span>
-        <span class="jump-height-unit"> cm</span>
-      </div>
-      <button class="btn-del" onclick="deleteJump(${realIdx})" aria-label="Eliminar salto ${realIdx + 1}">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  if (!filtered.length) { content.innerHTML = ''; return; }
+
+  // Group by note (same note = same condition)
+  const groups = [];
+  const keyMap = new Map();
+  for (const j of filtered) {
+    const key = j.note || '';
+    if (!keyMap.has(key)) { keyMap.set(key, []); groups.push({ key, list: keyMap.get(key) }); }
+    keyMap.get(key).push(j);
+  }
+
+  const multiGroup = groups.length > 1;
+  let animIdx = 0;
+
+  content.innerHTML = groups.map(({ key, list }) => {
+    const headerHtml = multiGroup
+      ? `<div class="condition-group-label">${key || 'Sin etiqueta'}</div>`
+      : '';
+
+    const itemsHtml = list.map(j => {
+      const realIdx = jumps.indexOf(j);
+      const delay   = (animIdx++ * 0.04).toFixed(2);
+      return `
+      <div class="jump-item" style="animation-delay:${delay}s">
+        <span class="jump-num">${realIdx + 1}</span>
+        <div class="jump-info">
+          <div class="jump-type">${j.type}</div>
+          <div class="jump-meta">${LEG[j.leg] || j.leg} &middot; ${Math.round(j.flightTime * 1000)} ms &middot; ${j.fps} fps</div>
+          ${j.note ? `<div class="jump-note">${j.note}</div>` : ''}
+        </div>
+        <div class="jump-height-wrap">
+          <span class="jump-height">${j.height.toFixed(1)}</span>
+          <span class="jump-height-unit"> cm</span>
+        </div>
+        <button class="btn-del" onclick="deleteJump(${realIdx})" aria-label="Eliminar salto ${realIdx + 1}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+
+    const heights = list.map(j => j.height);
+    const avg     = heights.reduce((s, h) => s + h, 0) / heights.length;
+    const best    = Math.max(...heights);
+    const worst   = Math.min(...heights);
+
+    const summaryHtml = `
+    <div class="summary-bar">
+      <div class="sum-item"><span class="sum-label">Saltos</span><span class="sum-value">${list.length}</span></div>
+      <div class="sum-item"><span class="sum-label">Media</span><span class="sum-value">${avg.toFixed(1)} cm</span></div>
+      <div class="sum-item"><span class="sum-label">Mejor</span><span class="sum-value">${best.toFixed(1)} cm</span></div>
     </div>`;
-  }).join('');
 
-  const fatigueCard = document.getElementById('fatigue-card');
-  if (filtered.length) {
-    const heights = filtered.map(j => j.height);
-    const avg  = heights.reduce((s, h) => s + h, 0) / heights.length;
-    const best = Math.max(...heights);
-    const worst = Math.min(...heights);
-    document.getElementById('results-sum-count').textContent = filtered.length;
-    document.getElementById('results-sum-avg').textContent   = avg.toFixed(1) + ' cm';
-    document.getElementById('results-sum-max').textContent   = best.toFixed(1) + ' cm';
-
-    if (filtered.length >= 3) {
+    let fatigueHtml = '';
+    if (list.length >= 3) {
       const fi   = ((best - worst) / best) * 100;
       const sdec = (1 - heights.reduce((s, h) => s + h, 0) / (best * heights.length)) * 100;
-      const _fatigueClass = v => v < 10 ? 'fatigue-value-low' : v < 20 ? 'fatigue-value-mid' : 'fatigue-value-high';
-      const fiEl   = document.getElementById('results-fi');
-      const sdecEl = document.getElementById('results-sdec');
-      fiEl.textContent   = fi.toFixed(1) + ' %';
-      sdecEl.textContent = sdec.toFixed(1) + ' %';
-      fiEl.className   = 'sum-value ' + _fatigueClass(fi);
-      sdecEl.className = 'sum-value ' + _fatigueClass(sdec);
-      fatigueCard.hidden = false;
-    } else {
-      fatigueCard.hidden = true;
+      const cls  = v => v < 10 ? 'fatigue-value-low' : v < 20 ? 'fatigue-value-mid' : 'fatigue-value-high';
+      fatigueHtml = `
+      <div class="fatigue-card">
+        <div class="fatigue-header"><span class="fatigue-title">Fatiga acumulada</span></div>
+        <div class="fatigue-metrics">
+          <div class="sum-item"><span class="sum-label">Índice (FI)</span><span class="sum-value ${cls(fi)}">${fi.toFixed(1)} %</span></div>
+          <div class="sum-item"><span class="sum-label">Decremento (S%)</span><span class="sum-value ${cls(sdec)}">${sdec.toFixed(1)} %</span></div>
+        </div>
+      </div>`;
     }
-  }
+
+    return `<div class="condition-group">${headerHtml}<div class="jump-list">${itemsHtml}</div>${summaryHtml}${fatigueHtml}</div>`;
+  }).join('');
 }
 
 function copyJumpsToClipboard() {
   const date = new Date().toLocaleDateString('es-ES');
-  const byType = jumps.reduce((acc, j) => { (acc[j.type] = acc[j.type] || []).push(j); return acc; }, {});
 
-  const sections = Object.entries(byType).map(([type, list]) => {
-    const lines = list.map((j, i) =>
-      `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)${j.note ? ` — ${j.note}` : ''}`
-    );
-    if (list.length > 1) {
-      const avg = list.reduce((s, j) => s + j.height, 0) / list.length;
-      const max = Math.max(...list.map(j => j.height));
-      lines.push(`  Media: ${avg.toFixed(1)} cm | Mejor: ${max.toFixed(1)} cm`);
-    }
-    if (list.length >= 3) {
-      const heights = list.map(j => j.height);
-      const best  = Math.max(...heights);
-      const worst = Math.min(...heights);
-      const fi   = ((best - worst) / best) * 100;
-      const sdec = (1 - heights.reduce((s, h) => s + h, 0) / (best * heights.length)) * 100;
-      lines.push(`  Fatiga — FI: ${fi.toFixed(1)} % | S%: ${sdec.toFixed(1)} %`);
-    }
-    return `${type} (${list.length} ${list.length === 1 ? 'salto' : 'saltos'}):\n${lines.join('\n')}`;
+  // Group by type then by note (same logic as renderResultsView)
+  const byType = new Map();
+  for (const j of jumps) {
+    if (!byType.has(j.type)) byType.set(j.type, new Map());
+    const key = j.note || '';
+    if (!byType.get(j.type).has(key)) byType.get(j.type).set(key, []);
+    byType.get(j.type).get(key).push(j);
+  }
+
+  const sections = [...byType.entries()].map(([type, noteGroups]) => {
+    const groupLines = [...noteGroups.entries()].map(([note, list]) => {
+      const condLabel = note ? `${type} — ${note}` : type;
+      const lines = list.map((j, i) =>
+        `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)`
+      );
+      if (list.length > 1) {
+        const avg = list.reduce((s, j) => s + j.height, 0) / list.length;
+        const max = Math.max(...list.map(j => j.height));
+        lines.push(`  Media: ${avg.toFixed(1)} cm | Mejor: ${max.toFixed(1)} cm`);
+      }
+      if (list.length >= 3) {
+        const heights = list.map(j => j.height);
+        const best  = Math.max(...heights);
+        const worst = Math.min(...heights);
+        const fi   = ((best - worst) / best) * 100;
+        const sdec = (1 - heights.reduce((s, h) => s + h, 0) / (best * heights.length)) * 100;
+        lines.push(`  Fatiga — FI: ${fi.toFixed(1)} % | S%: ${sdec.toFixed(1)} %`);
+      }
+      return `${condLabel} (${list.length} ${list.length === 1 ? 'salto' : 'saltos'}):\n${lines.join('\n')}`;
+    });
+    return groupLines.join('\n\n');
   });
 
   const text = `SALTOS PhysiQ-Jump\nFecha: ${date}\n\n${sections.join('\n\n')}`;
