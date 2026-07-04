@@ -1947,10 +1947,11 @@ function broadcastJumps() {
   try {
     const avg = jumps.length ? jumps.reduce((s, j) => s + j.height, 0) / jumps.length : null;
     const max = jumps.length ? Math.max(...jumps.map(j => j.height)) : null;
+    const jumpsCopy = jumps.map(j => ({ ...j }));
     const ch  = new BroadcastChannel('physiq-session');
     ch.postMessage({
       type:    'SESSION_JUMP',
-      jumps:   jumps.map(j => ({ ...j })),
+      jumps:   jumpsCopy,
       summary: {
         count:     jumps.length,
         avgHeight: avg != null ? parseFloat(avg.toFixed(1)) : null,
@@ -1958,6 +1959,7 @@ function broadcastJumps() {
       }
     });
     ch.close();
+    if (_patient) writeSession({ jump: jumpsCopy });
   } catch (_) {}
 }
 
