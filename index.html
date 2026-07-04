@@ -112,7 +112,7 @@
 
     /* Translate banner (mobile tap feedback) */
     .translate-banner {
-      position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 50;
+      position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 80;
       display: flex; align-items: center;
       gap: 8px; padding: 9px 1rem;
       background: #171e2e; border-bottom: 1px solid var(--border);
@@ -1285,11 +1285,7 @@ function navigateTo(name) {
 
 function goHome() {
   showView('home');
-  if (navDepth > 0) {
-    _popstateLock = true;
-    history.go(-navDepth);
-    navDepth = 0;
-  }
+  navDepth = 0;
 }
 
 // ─── Back gesture / system back button ────────────────────────
@@ -1481,10 +1477,7 @@ function closeAnalyzer() {
   video.src = '';
   if (videoSrc) { URL.revokeObjectURL(videoSrc); videoSrc = null; }
   showView('home');
-  if (navDepth > 0) {
-    _popstateLock = true;
-    history.go(-navDepth);
-  }
+  history.replaceState({ view: 'home', depth: 0 }, '');
   navDepth = 0;
 }
 
