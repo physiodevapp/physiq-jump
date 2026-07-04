@@ -351,6 +351,20 @@
     .sum-label { font-family: 'DM Mono', monospace; font-size: 0.63rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
     .sum-value { font-family: 'DM Mono', monospace; font-size: 0.95rem; font-weight: 500; color: var(--text1); }
 
+    .fatigue-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .fatigue-header {
+      padding: 8px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .fatigue-title { font-family: 'DM Mono', monospace; font-size: 0.63rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+    .fatigue-metrics { display: flex; padding: 13px 16px; gap: 0; }
+    .fatigue-value-low  { color: var(--green); }
+    .fatigue-value-mid  { color: var(--blue); }
+    .fatigue-value-high { color: var(--accent); }
+
     .btn-primary {
       width: 100%; padding: 14px 16px;
       border-radius: 12px; border: none;
@@ -1106,6 +1120,21 @@
       <div class="sum-item">
         <span class="sum-label">Mejor</span>
         <span class="sum-value" id="results-sum-max">—</span>
+      </div>
+    </div>
+    <div id="fatigue-card" class="fatigue-card" hidden>
+      <div class="fatigue-header">
+        <span class="fatigue-title">Fatiga acumulada</span>
+      </div>
+      <div class="fatigue-metrics">
+        <div class="sum-item">
+          <span class="sum-label">Índice (FI)</span>
+          <span class="sum-value" id="results-fi">—</span>
+        </div>
+        <div class="sum-item">
+          <span class="sum-label">Decremento (S%)</span>
+          <span class="sum-value" id="results-sdec">—</span>
+        </div>
       </div>
     </div>
     <button class="btn-primary" onclick="sendToReport()">Enviar a informe</button>
@@ -1892,12 +1921,30 @@ function renderResultsView() {
     </div>`;
   }).join('');
 
+  const fatigueCard = document.getElementById('fatigue-card');
   if (filtered.length) {
-    const avg = filtered.reduce((s, j) => s + j.height, 0) / filtered.length;
-    const max = Math.max(...filtered.map(j => j.height));
+    const heights = filtered.map(j => j.height);
+    const avg  = heights.reduce((s, h) => s + h, 0) / heights.length;
+    const best = Math.max(...heights);
+    const worst = Math.min(...heights);
     document.getElementById('results-sum-count').textContent = filtered.length;
     document.getElementById('results-sum-avg').textContent   = avg.toFixed(1) + ' cm';
-    document.getElementById('results-sum-max').textContent   = max.toFixed(1) + ' cm';
+    document.getElementById('results-sum-max').textContent   = best.toFixed(1) + ' cm';
+
+    if (filtered.length >= 3) {
+      const fi   = ((best - worst) / best) * 100;
+      const sdec = (1 - heights.reduce((s, h) => s + h, 0) / (best * heights.length)) * 100;
+      const _fatigueClass = v => v < 10 ? 'fatigue-value-low' : v < 20 ? 'fatigue-value-mid' : 'fatigue-value-high';
+      const fiEl   = document.getElementById('results-fi');
+      const sdecEl = document.getElementById('results-sdec');
+      fiEl.textContent   = fi.toFixed(1) + ' %';
+      sdecEl.textContent = sdec.toFixed(1) + ' %';
+      fiEl.className   = 'sum-value ' + _fatigueClass(fi);
+      sdecEl.className = 'sum-value ' + _fatigueClass(sdec);
+      fatigueCard.hidden = false;
+    } else {
+      fatigueCard.hidden = true;
+    }
   }
 }
 
@@ -1913,6 +1960,14 @@ function copyJumpsToClipboard() {
       const avg = list.reduce((s, j) => s + j.height, 0) / list.length;
       const max = Math.max(...list.map(j => j.height));
       lines.push(`  Media: ${avg.toFixed(1)} cm | Mejor: ${max.toFixed(1)} cm`);
+    }
+    if (list.length >= 3) {
+      const heights = list.map(j => j.height);
+      const best  = Math.max(...heights);
+      const worst = Math.min(...heights);
+      const fi   = ((best - worst) / best) * 100;
+      const sdec = (1 - heights.reduce((s, h) => s + h, 0) / (best * heights.length)) * 100;
+      lines.push(`  Fatiga — FI: ${fi.toFixed(1)} % | S%: ${sdec.toFixed(1)} %`);
     }
     return `${type} (${list.length} ${list.length === 1 ? 'salto' : 'saltos'}):\n${lines.join('\n')}`;
   });
