@@ -117,11 +117,11 @@
       gap: 8px; padding: 9px 1rem;
       background: #171e2e; border-bottom: 1px solid var(--border);
       font-family: 'Outfit', sans-serif; font-size: 0.78rem; color: var(--text2);
-      opacity: 0; pointer-events: none;
-      transform: translateY(-100%);
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path 0.25s ease;
     }
-    .translate-banner.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .translate-banner.visible { pointer-events: auto; clip-path: inset(0 0 0% 0); }
     @media (min-width: 769px) { .translate-banner { display: none; } }
     .translate-banner.visible ~ .view { padding-top: 36px; }
     #subHeader:not([hidden]) ~ .translate-banner { top: calc(var(--header-h) + 44px); }
