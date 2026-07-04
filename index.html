@@ -283,6 +283,11 @@
     .jump-info { flex: 1; min-width: 0; }
     .jump-type { font-size: 0.87rem; font-weight: 500; color: var(--text1); }
     .jump-meta { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
+    .jump-note { font-size: 0.72rem; color: var(--text2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .text-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text1); font-family: 'Outfit', sans-serif; font-size: .9rem; outline: none; transition: border-color .2s; box-sizing: border-box; }
+    .text-input:focus { border-color: var(--accent); }
+    .text-input::placeholder { color: var(--text3); }
     .jump-height-wrap { text-align: right; }
     .jump-height { font-family: 'DM Mono', monospace; font-size: 1.05rem; font-weight: 500; color: var(--accent); }
     .jump-height-unit { font-size: 0.68rem; color: var(--text3); }
@@ -1069,6 +1074,8 @@
       </div>
     </div>
 
+    <input id="jump-note-input" class="text-input" type="text" placeholder="Nota (opcional)" autocomplete="off">
+
     <div class="meta-row">
       <button id="sel-type-btn" class="sel-btn" onclick="openTypePicker()" aria-label="Tipo de salto">
         <span id="sel-type-val" class="sel-btn-val">CMJ</span>
@@ -1774,6 +1781,8 @@ function saveJump() {
   if (!marks.takeoff || !marks.landing) return;
   const t = marks.landing - marks.takeoff;
   const h = parseFloat(((G * t * t) / 8 * 100).toFixed(1));
+  const noteInput = document.getElementById('jump-note-input');
+  const note = noteInput?.value.trim() || '';
   videoJumpCount++;
   jumps.push({
     id:         Date.now(),
@@ -1782,7 +1791,9 @@ function saveJump() {
     flightTime: parseFloat(t.toFixed(4)),
     height:     h,
     fps,
+    ...(note ? { note } : {}),
   });
+  if (noteInput) noteInput.value = '';
   broadcastJumps();
   renderJumpList();
   _updateResetBtn();
@@ -1869,6 +1880,7 @@ function renderResultsView() {
       <div class="jump-info">
         <div class="jump-type">${j.type}</div>
         <div class="jump-meta">${LEG[j.leg] || j.leg} &middot; ${Math.round(j.flightTime * 1000)} ms &middot; ${j.fps} fps</div>
+        ${j.note ? `<div class="jump-note">${j.note}</div>` : ''}
       </div>
       <div class="jump-height-wrap">
         <span class="jump-height">${j.height.toFixed(1)}</span>
@@ -1895,7 +1907,7 @@ function copyJumpsToClipboard() {
 
   const sections = Object.entries(byType).map(([type, list]) => {
     const lines = list.map((j, i) =>
-      `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)`
+      `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)${j.note ? ` — ${j.note}` : ''}`
     );
     if (list.length > 1) {
       const avg = list.reduce((s, j) => s + j.height, 0) / list.length;
