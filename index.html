@@ -1863,7 +1863,7 @@ function updateScrubberMarkers() {
 
 // ─── Save ──────────────────────────────────────────────────────
 function saveJump() {
-  if (!marks.takeoff || !marks.landing) return;
+  if (marks.takeoff === null || marks.landing === null) return;
   const t = marks.landing - marks.takeoff;
   const h = parseFloat(((G * t * t) / 8 * 100).toFixed(1));
   const note = currentNote;
