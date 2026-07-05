@@ -269,6 +269,7 @@
     .jump-list { display: flex; flex-direction: column; gap: 8px; }
 
     .jump-item {
+      position: relative;
       display: flex; align-items: center; gap: 12px;
       padding: 13px 14px; border-radius: 10px;
       background: var(--surface); border: 1px solid var(--border);
@@ -293,14 +294,25 @@
     .jump-height-unit { font-size: 0.68rem; color: var(--text3); }
 
     .btn-del {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: none; background: transparent; cursor: pointer;
-      color: var(--text3); flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.12s, color 0.12s;
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-del:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .btn-del:active { color: #ef4444; border-color: rgba(239,68,68,0.5); }
 
     /* ── Summary card ───────────────────────────────── */
     .summary-card {
@@ -1991,9 +2003,7 @@ function renderResultsView() {
           <span class="jump-height">${j.height.toFixed(1)}</span>
           <span class="jump-height-unit"> cm</span>
         </div>
-        <button class="btn-del" onclick="deleteJump(${realIdx})" aria-label="Eliminar salto ${realIdx + 1}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <span role="button" class="btn-del" onclick="event.stopPropagation();deleteJump(${realIdx})" aria-label="Eliminar salto ${realIdx + 1}" title="Eliminar salto">✕</span>
       </div>`;
     }).join('');
 
