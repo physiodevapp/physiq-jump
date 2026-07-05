@@ -2006,7 +2006,7 @@ function renderResultsView() {
 
   content.innerHTML = groups.map(({ key, list }) => {
     const headerHtml = multiGroup
-      ? `<div class="condition-group-label">${key || 'Sin etiqueta'}</div>`
+      ? `<div class="condition-group-label">${key ? key.toUpperCase() : 'Sin etiqueta'}</div>`
       : '';
 
     const itemsHtml = list.map(j => {
@@ -2073,7 +2073,7 @@ function copyJumpsToClipboard() {
 
   const sections = [...byType.entries()].map(([type, noteGroups]) => {
     const groupLines = [...noteGroups.entries()].map(([note, list]) => {
-      const condLabel = note ? `${type} — ${note}` : type;
+      const condLabel = note ? `${type} — ${note.toUpperCase()}` : type;
       const lines = list.map((j, i) =>
         `  #${i + 1}: Vuelo ${Math.round(j.flightTime * 1000)} ms → ${j.height.toFixed(1)} cm (${j.fps} fps)`
       );
