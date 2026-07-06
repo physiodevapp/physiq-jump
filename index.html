@@ -26,7 +26,7 @@
       --text2:       #8aa4bc;
       --text3:       #5a6e8a;
       --safe-b:      env(safe-area-inset-bottom, 0px);
-      --header-h:    52px;
+      --header-h:    64px;
     }
 
     html, body {
@@ -66,7 +66,7 @@
     .in-hub .logo-main { cursor: pointer; transition: opacity 0.15s; }
     .in-hub .logo-main::before { content: '‹'; display: inline-block; margin-right: 8px; opacity: 0.55; animation: hub-back-hint 0.7s ease-out 0.5s 1 both; }
     .in-hub .logo-main:hover { opacity: 0.75; }
-    @media (max-width: 768px) { .logo-main, .logo-sub { font-size: 1.2rem; } }
+    @media (max-width: 768px) { :root { --header-h: 52px; } .logo-main, .logo-sub { font-size: 1.2rem; } }
     @media (max-width: 480px) { :root { --header-h: 48px; } .logo-main, .logo-sub { font-size: 1.1rem; } }
     @media (max-height: 500px) and (max-width: 900px) { :root { --header-h: 44px; } }
     @media (max-width: 360px) { .logo-sub-word { display: none; } .logo-sub-initial { display: inline; } }
