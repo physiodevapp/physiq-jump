@@ -6,7 +6,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 PhysiQ-Jump is a video-based vertical jump height analyzer for physiotherapy. The physiotherapist records the jump on video, then marks the takeoff and landing frames; jump height is derived from flight time using the standard ballistic formula. Results are shared to the shared PhysiQ session in real time via BroadcastChannel.
 
-**Deployment:** GitHub Pages — push to `main` deploys automatically. The hub (`physiodevapp.github.io/physiq/`) is the primary entry point; this app is also accessible standalone.
+**Deployment:** Push to `main` triggers `deploy.yml`, which copies the app files into the central PhysiQ hub repo (`physiodevapp/physiq`). The hub's own GitHub Pages deployment serves the app at `physiodevapp.github.io/physiq/jump/`. There is no standalone Pages deployment for this repo.
 
 ## Development
 
