@@ -225,7 +225,7 @@
       background: rgba(244,63,94,0.08);
       padding: 5px 10px; border-radius: 6px;
       margin-left: auto; min-width: 0; max-width: 55%;
-      display: flex; align-items: center; gap: 5px;
+      display: flex; align-items: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .jump-type-badge-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -926,7 +926,7 @@
 <!-- SUB-HEADER (view-specific: back chip + type badge + optional fps chip) -->
 <div id="subHeader" class="sub-header" hidden>
   <button id="subHeaderBack" class="btn-back-sub" aria-label="Volver">←<span class="btn-back-sub-label"> Saltos</span></button>
-  <span id="subHeaderBadge" class="jump-type-badge" hidden><span id="subHeaderBadgeDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0"></span><span id="subHeaderBadgeText" class="jump-type-badge-text"></span></span>
+  <span id="subHeaderBadge" class="jump-type-badge" hidden><span id="subHeaderBadgeText" class="jump-type-badge-text"></span></span>
   <button id="fps-chip" class="fps-chip" onclick="openFPSSheet()" hidden>
     <span id="fps-chip-txt">— fps</span>
   </button>
