@@ -120,8 +120,7 @@ home ──[selectJumpType(type)]──► source ──[openFilePicker()]──
  │
  ├──[closeAnalyzer() / goHome()]◄──── analyzer ──[saveJump() × N → btn-finish]──► home
  │
- └──[openResultsView(type)]──► results ──[sendToReport()]──► (PHYSIQ_NAVIGATE to 'report')
-                                      └──[goHome()]──────► home
+ └──[openResultsView(type)]──► results ──[goHome()]──────► home
 ```
 
 **Key functions:**
@@ -211,7 +210,6 @@ if (window.self !== window.top) {
 | Type | Direction | Trigger |
 |------|-----------|--------|
 | `PHYSIQ_GO_HOME` | → hub | User taps the logo (`goHub()`) |
-| `PHYSIQ_NAVIGATE, to: 'report'` | → hub | User taps "Enviar a informe" (`sendToReport()`) — also calls `broadcastJumps()` first |
 
 **postMessages received from hub:**
 
@@ -231,7 +229,7 @@ The confirm action button (`#confirmAction`) is styled `background: var(--accent
 
 ## Results view
 
-Filtered per-type list showing each jump's number, type, leg, flight time (ms), FPS, and height (cm). Summary bar at bottom shows count / avg height / max height. "Enviar a informe" button (`sendToReport()`) broadcasts current jumps and navigates the hub to physiq-report. Individual delete buttons call `deleteJump(idx)` — if the last jump of the active filter is deleted, returns to home.
+Filtered per-type list showing each jump's number, type, leg, flight time (ms), FPS, and height (cm). Summary bar at bottom shows count / avg height / max height. Individual delete buttons call `deleteJump(idx)` — if the last jump of the active filter is deleted, returns to home.
 
 **Toast notifications:**
 - `_showJumpSavedToast(n, h)` — green toast "✓ Salto #N — X.X cm", auto-removes after 2500ms
