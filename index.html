@@ -1136,7 +1136,6 @@
 <div id="view-results" class="view" hidden>
   <div class="scroll-body">
     <div id="results-content"></div>
-    <button class="btn-primary" onclick="sendToReport()">Enviar a informe</button>
   </div>
 </div>
 
@@ -2153,10 +2152,6 @@ function broadcastJumps() {
   } catch (_) {}
 }
 
-function sendToReport() {
-  broadcastJumps();
-  window.parent?.postMessage({ type: 'PHYSIQ_NAVIGATE', to: 'report' }, '*');
-}
 
 // ─── Helpers ───────────────────────────────────────────────────
 function setCurrentTimeDisplay(t) {

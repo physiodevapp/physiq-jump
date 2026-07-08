@@ -13,8 +13,7 @@ A clinical tool for physiotherapists that measures vertical jump height from vid
 3. Scrub frame-by-frame to find the takeoff and landing moments.
 4. Tap **Despegue** and **Aterrizaje** to mark the frames, then **Guardar**.
 5. Repeat for additional jumps in the same session.
-6. Review per-type results (count, average height, maximum height).
-7. Tap **Enviar a informe** to send the data to PhysiQ Report.
+6. Review per-type results (count, average height, maximum height). Jump data is broadcast to PhysiQ Report automatically after each save.
 
 ## Jump types
 
