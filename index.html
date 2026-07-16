@@ -2119,18 +2119,27 @@ function _showCopyFeedback() {
 }
 
 function deleteJump(idx) {
-  jumps.splice(idx, 1);
-  broadcastJumps();
-  renderJumpList();
-  _updateResetBtn();
-  if (currentView === 'results') {
-    const remaining = jumps.filter(j => j.type === activeTypeFilter);
-    if (remaining.length === 0) {
-      goHome();
-    } else {
-      renderResultsView();
+  const j = jumps[idx];
+  const label = j ? `salto ${idx + 1} (${j.type}, ${j.height.toFixed(1)} cm)` : `salto ${idx + 1}`;
+  showConfirmBanner(
+    'Borrar salto',
+    `Se eliminará el ${label}.`,
+    'Borrar',
+    () => {
+      jumps.splice(idx, 1);
+      broadcastJumps();
+      renderJumpList();
+      _updateResetBtn();
+      if (currentView === 'results') {
+        const remaining = jumps.filter(j => j.type === activeTypeFilter);
+        if (remaining.length === 0) {
+          goHome();
+        } else {
+          renderResultsView();
+        }
+      }
     }
-  }
+  );
 }
 
 // ─── Broadcast ─────────────────────────────────────────────────
